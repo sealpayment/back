@@ -52,7 +52,7 @@
     "path": "^0.12.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "stripe": "^9.11.0",
+    "stripe": "^17.2.0",
     "subscriptions-transport-ws": "^0.11.0",
     "uuid": "^9.0.0"
   },

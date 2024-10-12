@@ -8,6 +8,8 @@ const { json } = pkg;
 
 import AuthRouter from "./routes/auth.js";
 import UserRouter from "./routes/user.js";
+import MissionsRouter from "./routes/missions.js";
+import WebhookRouter from "./routes/webhook.js";
 
 const PORT = process.env.PORT || 9000;
 const URL = `http://127.0.0.1:${PORT}`;
@@ -18,6 +20,7 @@ const DB_URL =
 const __dirname = path.resolve();
 
 const app = express();
+app.use("/api/webhook", WebhookRouter);
 
 app.use(
   express.json({
@@ -36,6 +39,7 @@ app.use(cors(), json());
 
 app.use("/api/auth", AuthRouter);
 app.use("/api/user", UserRouter);
+app.use("/api/missions", MissionsRouter);
 
 const httpServer = createServer(app);
 mongoose

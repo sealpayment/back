@@ -5,7 +5,7 @@ import mustache from "mustache";
 
 import { User } from "../models/userModel.js";
 import { generateAccessToken, getTokenPayload } from "../utils/helpers.js";
-import { sendEmail } from "../services/authServices.js";
+import { sendEmail } from "../services/emailServices.js";
 import translations from "../locales/index.js";
 
 const router = express.Router();
@@ -24,32 +24,17 @@ router.post("/sign-in", async (req, res) => {
 });
 
 router.post("/sign-up", async (req, res) => {
-  const { email, password, language } = req.body;
+  const { email, password } = req.body;
   const passwordHashed = CryptoJS.SHA256(password).toString();
   const user = await User.findOne({ email });
   if (!user) {
     const newUser = new User({
       email,
       password: passwordHashed,
-      language,
     });
     await newUser.save();
     const token = generateAccessToken(newUser.id);
-    const documentPath = fs.readFileSync(
-      "./src/templates/signup.html",
-      "utf-8"
-    );
-    const confirmationLink = `${process.env.API_URL}/confirm-email?token=${token}`;
-    const signupDocument = mustache.render(documentPath, {
-      confirmationLink,
-      ...translations[newUser.language],
-    });
-    await sendEmail(
-      email,
-      translations[newUser.language].signup.title,
-      signupDocument
-    );
-    return res.status(200).json(token);
+    return res.status(200).json({ accessToken: token });
   }
   res.status(400).json({ message: "User already exists" });
 });

@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 import mustache from "mustache";
 import fs from "fs";
 
-export const sendEmail = (email, subject, document) => {
+export const sendEmail = async (email, subject, body) => {
   const transporter = nodemailer.createTransport({
     host: "mail.privateemail.com",
     port: 465,
@@ -13,18 +13,11 @@ export const sendEmail = (email, subject, document) => {
     },
   });
 
-  const mailOptions = {
-    name: "Ariane",
-    from: "notification@ariane.guide",
+  const emailSent = await transporter.sendMail({
+    from: "Bindpay <notification@ariane.guide>",
     to: email,
     subject: subject,
-    html: document,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      return res.status(500).send(error.toString());
-    }
-    res.send("Email envoyé: " + info.response);
+    text: body,
   });
+  return emailSent;
 };
