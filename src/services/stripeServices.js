@@ -6,28 +6,29 @@ const stripe = new Stripe(
 
 export async function createStripePaymentLink(mission) {
   try {
-    const product = await stripe.products.create({
-      name: mission.name,
-      description: mission.description,
-      default_price_data: {
-        currency: "eur",
-        unit_amount: mission.amount * 100,
-      },
-    });
-    const paymentLink = await stripe.paymentLinks.create({
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
       line_items: [
         {
-          price: product.default_price,
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: mission.name,
+            },
+            unit_amount: mission.amount * 100, // Montant en centimes
+          },
           quantity: 1,
         },
       ],
+      mode: "payment",
+      success_url: `http://localhost:3000/create-mission/success?mission_id=${mission.id}`,
+      cancel_url: "http://localhost:3000/create-mission",
       metadata: {
         missionId: mission.id,
       },
     });
-    return paymentLink;
+    return session.url;
   } catch (error) {
-    console.error("Error creating payment link", error);
     throw error;
   }
 }

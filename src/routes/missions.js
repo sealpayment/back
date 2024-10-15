@@ -1,20 +1,23 @@
 import express from "express";
 
+import { checkJwt } from "../utils/auth.js";
 import { createStripePaymentLink } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
 
 const router = express.Router();
-router.get("/", (req, res) => {
-  const missions = Mission.find();
-  res.json(missions);
+router.get("/", checkJwt, async ({ user }, res) => {
+  const missions = await Mission.find({ user_sub: user.sub }).exec();
+  return res.json(missions);
 });
 
-router.get("/:id", (req, res) => {
-  const missionId = parseInt(req.params.id);
-  const mission = Mission.findById(missionId);
+router.get("/:id", async (req, res) => {
+  const missionId = req.params.id;
+  console.log(missionId);
+  const mission = await Mission.findById(missionId).exec();
   if (!mission) {
     return res.status(404).json({ message: "Mission non trouvée" });
   }
+  console.log(mission);
   res.json(mission);
 });
 
@@ -25,21 +28,22 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ message: "Nom et description requis" });
   }
 
+  let newMission;
   try {
-    const newMission = await new Mission(mission).save();
-    const paymentLink = await createStripePaymentLink(newMission);
-    newMission.paymentLink = paymentLink.url;
-    newMission.save();
-
-    res.status(201).json({
-      missionId: newMission.id,
-      paymentLink: paymentLink.url,
-    });
+    newMission = await new Mission(mission).save();
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Erreur lors de la création du lien de paiement" });
+      .json({ message: "Error while creating the mission.", error });
   }
+  const link = await createStripePaymentLink(newMission);
+  newMission.paymentLink = link;
+  newMission.save();
+
+  res.status(201).json({
+    missionId: newMission.id,
+    paymentLink: link,
+  });
 });
 
 router.put("/:id", (req, res) => {
@@ -69,6 +73,47 @@ router.delete("/:id", (req, res) => {
 
   missions.splice(missionIndex, 1);
   res.status(204).send(); // 204 No Content
+});
+
+router.post("/:id/accept", async (req, res) => {
+  const missionId = req.params.id;
+
+  try {
+    const mission = await Mission.findById(missionId);
+    if (!mission) {
+      return res.status(404).json({ message: "Mission not found." });
+    }
+    if (mission.status !== "pending") {
+      return res.status(400).json({ message: "Mission is not available." });
+    }
+    mission.status = "active";
+    await mission.save();
+    res
+      .status(200)
+      .json({ message: "Mission accepted successfully.", mission });
+  } catch (err) {
+    res.status(500).json({ message: "Erreur while accepting the mission." });
+  }
+});
+
+router.post("/missions/:id/reject", async (req, res) => {
+  const missionId = req.params.id;
+
+  try {
+    const mission = await Mission.findByIdAndUpdate(
+      missionId,
+      { status: "declined" },
+      { new: true }
+    );
+    if (!mission) {
+      return res.status(404).json({ message: "Mission not found." });
+    }
+    res
+      .status(200)
+      .json({ message: "Mission rejected successfully.", mission });
+  } catch (err) {
+    res.status(500).json({ message: "Erreur while rejecting the mission." });
+  }
 });
 
 export default router;

@@ -29,7 +29,7 @@ router.post(
       const missionId = session.metadata.missionId;
       try {
         const mission = await Mission.findById(missionId);
-        mission.status = "active";
+        mission.status = "pending";
         await mission.save();
         sendEmail(
           mission.recipient,

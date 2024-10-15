@@ -1,10 +1,8 @@
 import express from "express";
 
 import { User } from "../models/userModel.js";
-import authMiddleware from "../utils/auth.js";
 
 const router = express.Router();
-router.use(authMiddleware);
 
 router.get("/me", async (req, res) => {
   const user = req.user;

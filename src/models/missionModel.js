@@ -7,7 +7,7 @@ const RequirementSchema = new Schema({
 });
 
 const MissionSchema = new Schema({
-  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  user_sub: { type: String, required: true },
   recipient: {
     type: String,
     required: true,
@@ -24,7 +24,11 @@ const MissionSchema = new Schema({
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
   paymentLink: { type: String },
-  status: { type: String, enum: ["draft", "active"], default: "draft" },
+  status: {
+    type: String,
+    enum: ["draft", "pending", "active", "declined"],
+    default: "draft",
+  },
   requirements: [RequirementSchema],
   createdAt: { type: Date, default: Date.now },
 });
