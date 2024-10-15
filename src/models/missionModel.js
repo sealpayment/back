@@ -7,7 +7,8 @@ const RequirementSchema = new Schema({
 });
 
 const MissionSchema = new Schema({
-  user_sub: { type: String, required: true },
+  from_user_sub: { type: String, required: true },
+  to_user_sub: { type: String },
   recipient: {
     type: String,
     required: true,

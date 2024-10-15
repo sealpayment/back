@@ -35,7 +35,7 @@ router.post(
           mission.recipient,
           "Tristan vous invite à collaborer",
           "Bonjour, Tristan vous invite à collaborer à sa mission. Cliquez sur le lien suivant pour accepter: " +
-            mission.paymentLink
+            `http://localhost:3000/accept-mission/${missionId}`
         );
         response.status(200).json({ message: "Mission is now active" });
       } catch (err) {
