@@ -21,8 +21,8 @@ export async function createStripePaymentLink(mission) {
         },
       ],
       mode: "payment",
-      success_url: `http://localhost:3000/create-mission/success?mission_id=${mission.id}`,
-      cancel_url: "http://localhost:3000/create-mission",
+      success_url: `http://localhost:3000/mission/success?mission_id=${mission.id}`,
+      cancel_url: "http://localhost:3000/mission",
       metadata: {
         missionId: mission.id,
       },

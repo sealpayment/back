@@ -9,6 +9,7 @@ const { json } = pkg;
 import AuthRouter from "./routes/auth.js";
 import UserRouter from "./routes/user.js";
 import MissionsRouter from "./routes/missions.js";
+import PaymentRouter from "./routes/payment.js";
 import WebhookRouter from "./routes/webhook.js";
 
 const PORT = process.env.PORT || 9000;
@@ -40,6 +41,7 @@ app.use(cors(), json());
 app.use("/api/auth", AuthRouter);
 app.use("/api/user", UserRouter);
 app.use("/api/missions", MissionsRouter);
+app.use("/api/payment", PaymentRouter);
 
 const httpServer = createServer(app);
 mongoose

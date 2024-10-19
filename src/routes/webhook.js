@@ -29,12 +29,12 @@ router.post(
       const missionId = session.metadata.missionId;
       try {
         const mission = await Mission.findById(missionId);
-        mission.status = "pending";
+        mission.status = "active";
         await mission.save();
         sendEmail(
           mission.recipient,
           "Tristan vous invite à collaborer",
-          "Bonjour, Tristan vous invite à collaborer à sa mission. Cliquez sur le lien suivant pour accepter: " +
+          `Bonjour, Tristan vous a envoyé ${mission.amount}€ pour collaborer. Cliquez sur le lien suivant pour récupérer votre argent: ` +
             `http://localhost:3000/accept-mission/${missionId}`
         );
         response.status(200).json({ message: "Mission is now active" });

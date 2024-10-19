@@ -3,6 +3,7 @@ import express from "express";
 import { checkJwt } from "../utils/auth.js";
 import { createStripePaymentLink } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
+import { sendEmail } from "../services/emailServices.js";
 
 const router = express.Router();
 router.get("/", checkJwt, async ({ user }, res) => {
@@ -20,11 +21,14 @@ router.get("/:id", async (req, res) => {
   }
   res.json(mission);
 });
+
 router.post("/create", checkJwt, async (req, res) => {
   const mission = req.body;
-  const { name, description, amount } = mission;
-  if (!name || !description || !amount) {
-    return res.status(400).json({ message: "Nom et description requis" });
+  const { name, description, amount, recipient } = mission;
+  if (!name || !description || !amount || !recipient) {
+    return res
+      .status(400)
+      .json({ message: "Nom, description, montant et email requis" });
   }
 
   let newMission;
@@ -45,6 +49,37 @@ router.post("/create", checkJwt, async (req, res) => {
     missionId: newMission.id,
     paymentLink: newMission.paymentLink,
   });
+});
+
+router.post("/ask", checkJwt, async (req, res) => {
+  const mission = req.body;
+  const { name, description, amount, recipient } = mission;
+  if (!name || !description || !amount || !recipient) {
+    return res
+      .status(400)
+      .json({ message: "Nom, description, montant et email requis" });
+  }
+
+  let newMission;
+  try {
+    newMission = new Mission({
+      ...mission,
+      to_user_sub: req.user.sub,
+    });
+    const link = await createStripePaymentLink(newMission);
+    newMission.paymentLink = link;
+    await newMission.save();
+
+    sendEmail(
+      mission.recipient,
+      "Tristan vous demande de collaborer",
+      `Bonjour, Tristan vous demande de payer ${mission.amount}€. Cliquez sur le lien suivant pour payer directement : ${link}`
+    );
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Error while creating the mission.", error });
+  }
 });
 
 router.post("/:id/accept", checkJwt, async (req, res) => {
