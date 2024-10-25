@@ -4,13 +4,15 @@ import cors from "cors";
 import path from "path";
 import { createServer } from "http";
 import pkg from "body-parser";
+import cron from "node-cron";
+import axios from "axios";
 const { json } = pkg;
 
-import AuthRouter from "./routes/auth.js";
-import UserRouter from "./routes/user.js";
 import MissionsRouter from "./routes/missions.js";
 import PaymentRouter from "./routes/payment.js";
 import WebhookRouter from "./routes/webhook.js";
+import StripeRouter from "./routes/stripe.js";
+import UserRouter from "./routes/user.js";
 
 const PORT = process.env.PORT || 9000;
 const URL = `http://127.0.0.1:${PORT}`;
@@ -38,10 +40,25 @@ app.use(
 );
 app.use(cors(), json());
 
-app.use("/api/auth", AuthRouter);
-app.use("/api/user", UserRouter);
 app.use("/api/missions", MissionsRouter);
 app.use("/api/payment", PaymentRouter);
+app.use("/api/stripe", StripeRouter);
+app.use("/api/users", UserRouter);
+
+cron.schedule("* * * * *", async () => {
+  try {
+    axios.post("http://127.0.0.1:9000/api/missions/complete-today");
+    axios.post("http://127.0.0.1:9000/api/missions/paid-today");
+    console.log(
+      "Missions vérifiées et mises à jour toutes les minutes pour les tests."
+    );
+  } catch (error) {
+    console.error(
+      "Erreur lors de l'exécution de la tâche cron de test:",
+      error
+    );
+  }
+});
 
 const httpServer = createServer(app);
 mongoose

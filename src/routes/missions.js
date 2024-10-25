@@ -1,9 +1,13 @@
 import express from "express";
 
 import { checkJwt } from "../utils/auth.js";
-import { createStripePaymentLink } from "../services/stripeServices.js";
+import {
+  createStripePaymentLink,
+  transferFundsToConnectedAccount,
+} from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
 import { sendEmail } from "../services/emailServices.js";
+import { User } from "../models/userModel.js";
 
 const router = express.Router();
 router.get("/", checkJwt, async ({ user }, res) => {
@@ -121,6 +125,68 @@ router.post("/missions/:id/reject", async (req, res) => {
       .json({ message: "Mission rejected successfully.", mission });
   } catch (err) {
     res.status(500).json({ message: "Erreur while rejecting the mission." });
+  }
+});
+
+// ... existing code ...
+
+router.post("/complete-today", async (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  try {
+    const result = await Mission.updateMany(
+      { endDate: { $gte: today, $lt: tomorrow }, status: { $ne: "completed" } },
+      { $set: { status: "completed" } }
+    );
+
+    res.status(200).json({
+      message: `${result.modifiedCount} missions marked as completed.`,
+    });
+  } catch (error) {
+    console.error("Error completing missions:", error);
+    res
+      .status(500)
+      .json({ message: "Erreur while completing missions.", error });
+  }
+});
+
+router.post("/paid-today", async (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  try {
+    const missionsPaid = await Mission.find({
+      endDate: { $gte: today, $lt: tomorrow },
+      status: "completed",
+    });
+
+    console.log("Missions paid today:", missionsPaid);
+
+    for (const mission of missionsPaid) {
+      const user = await User.findOne({ sub: mission.to_user_sub });
+      transferFundsToConnectedAccount(
+        user.connected_account_id,
+        mission.amount * 100
+      );
+      mission.status = "paid";
+      await mission.save();
+    }
+
+    res.status(200).json({
+      message: `${missionsPaid.length} missions paid.`,
+    });
+  } catch (error) {
+    console.error("Error completing missions:", error);
+    res
+      .status(500)
+      .json({ message: "Erreur while completing missions.", error });
   }
 });
 

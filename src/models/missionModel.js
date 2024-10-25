@@ -26,7 +26,7 @@ const MissionSchema = new Schema({
   paymentLink: { type: String },
   status: {
     type: String,
-    enum: ["draft", "active", "declined", "completed"],
+    enum: ["draft", "pending", "active", "declined", "completed", "paid"],
     default: "draft",
   },
   requirements: [RequirementSchema],
