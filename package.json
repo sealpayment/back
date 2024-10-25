@@ -1,8 +1,8 @@
 {
-  "name": "ariane-server",
+  "name": "bindpay-server",
   "version": "1.0.0",
   "main": "index.js",
-  "author": "Ariane",
+  "author": "Bindpay",
   "license": "MIT",
   "scripts": {
     "start": "nodemon -r dotenv/config src/index.js",

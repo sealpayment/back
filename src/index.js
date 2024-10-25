@@ -24,14 +24,8 @@ const DB_URL =
 const __dirname = path.resolve();
 
 const app = express();
-const corsOptions = {
-  origin: "https://bindpay-dev-68c2b613aebe.herokuapp.com", // Remplacez par l'URL de votre application frontale
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
-  optionsSuccessStatus: 204,
-};
 
-app.use(cors(corsOptions), json());
+app.use(cors(), json());
 app.use("/api/webhook", WebhookRouter);
 
 app.use(
@@ -56,17 +50,9 @@ app.use("/api/users", UserRouter);
 cron.schedule("* * * * *", async () => {
   try {
     await axios.post(`${process.env.API_URL}/api/missions/complete-today`);
-    const res = await axios.post(
-      `${process.env.API_URL}/api/missions/paid-today`
-    );
-    console.log(
-      "Missions vérifiées et mises à jour toutes les minutes pour les tests."
-    );
+    await axios.post(`${process.env.API_URL}/api/missions/paid-today`);
   } catch (error) {
-    console.error(
-      "Erreur lors de l'exécution de la tâche cron de test:",
-      error
-    );
+    console.log("Error while completing and paying missions", error);
   }
 });
 
@@ -74,7 +60,6 @@ const httpServer = createServer(app);
 mongoose
   .connect(DB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
-    console.log("Database connected to", DB_URL);
     httpServer.listen(PORT, () => {
       console.log(`Server REST is now running on ${URL}`);
     });
