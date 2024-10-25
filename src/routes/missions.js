@@ -3,7 +3,7 @@ import express from "express";
 import { checkJwt } from "../utils/auth.js";
 import {
   createStripePaymentLink,
-  transferFundsToConnectedAccount,
+  transferToConnectedAccount,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
 import { sendEmail } from "../services/emailServices.js";
@@ -128,8 +128,6 @@ router.post("/missions/:id/reject", async (req, res) => {
   }
 });
 
-// ... existing code ...
-
 router.post("/complete-today", async (req, res) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -139,18 +137,21 @@ router.post("/complete-today", async (req, res) => {
 
   try {
     const result = await Mission.updateMany(
-      { endDate: { $gte: today, $lt: tomorrow }, status: { $ne: "completed" } },
+      {
+        endDate: { $gte: today, $lt: tomorrow },
+        status: "active",
+      },
       { $set: { status: "completed" } }
     );
-
     res.status(200).json({
-      message: `${result.modifiedCount} missions marked as completed.`,
+      message: `Today's missions completed: ${result.nModified}`,
     });
   } catch (error) {
-    console.error("Error completing missions:", error);
-    res
-      .status(500)
-      .json({ message: "Erreur while completing missions.", error });
+    console.error("Erreur lors de la complétion des missions:", error);
+    res.status(500).json({
+      message: "Erreur lors de la complétion des missions.",
+      error: error.message,
+    });
   }
 });
 
@@ -162,31 +163,45 @@ router.post("/paid-today", async (req, res) => {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   try {
-    const missionsPaid = await Mission.find({
+    const missionsToPay = await Mission.find({
       endDate: { $gte: today, $lt: tomorrow },
       status: "completed",
     });
-
-    console.log("Missions paid today:", missionsPaid);
-
-    for (const mission of missionsPaid) {
+    for (const mission of missionsToPay) {
       const user = await User.findOne({ sub: mission.to_user_sub });
-      transferFundsToConnectedAccount(
-        user.connected_account_id,
-        mission.amount * 100
-      );
-      mission.status = "paid";
+      if (!user) {
+        console.error(`Utilisateur non trouvé pour la mission: ${mission.id}`);
+        continue;
+      }
+      try {
+        const transfer = await transferToConnectedAccount(
+          user.connected_account_id,
+          mission.amount * 100
+        );
+        if (transfer) {
+          mission.status = "paid";
+        } else {
+          console.error(
+            `Erreur lors du transfert pour la mission: ${mission.id}`
+          );
+        }
+      } catch (transferError) {
+        console.error(
+          `Erreur lors du transfert pour la mission: ${mission.id}`,
+          transferError
+        );
+        mission.status = "error";
+      }
       await mission.save();
     }
-
     res.status(200).json({
-      message: `${missionsPaid.length} missions paid.`,
+      message: `Today's payments successful`,
     });
   } catch (error) {
-    console.error("Error completing missions:", error);
-    res
-      .status(500)
-      .json({ message: "Erreur while completing missions.", error });
+    res.status(500).json({
+      message: "Erreur lors du paiement des missions.",
+      error: error.message,
+    });
   }
 });
 

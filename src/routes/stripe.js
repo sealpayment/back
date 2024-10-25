@@ -18,7 +18,8 @@ router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
     const userFound = await User.findOne({ sub: user.sub });
     const bankAccountId = await createBankAccount(
       body.iban,
-      body.accountHolderName
+      body.accountHolderName,
+      userFound.connected_account_id
     );
     await linkAccountToConnectedAccount(
       bankAccountId,
@@ -28,8 +29,8 @@ router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
       message: "Nouveau compte bancaire ajouté avec succès",
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
-      message: "Erreur lors de l'ajout du compte bancaire",
       error: error.message,
     });
   }

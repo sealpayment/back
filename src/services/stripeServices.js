@@ -162,8 +162,24 @@ export async function linkAccountToConnectedAccount(
   }
 }
 
-export async function createBankAccount(iban, accountHolderName) {
+export async function createBankAccount(
+  iban,
+  accountHolderName,
+  connectedAccountId
+) {
   try {
+    const existingBanks = await stripe.accounts.listExternalAccounts(
+      connectedAccountId,
+      {
+        object: "bank_account",
+      }
+    );
+    const bankExists = existingBanks.data.some(
+      (bank) => bank.last4 === iban.slice(-4)
+    );
+    if (bankExists) {
+      throw new Error("Le compte bancaire existe déjà.");
+    }
     const token = await stripe.tokens.create({
       bank_account: {
         country: "FR",
@@ -197,11 +213,12 @@ export async function getConnectedBanks(connectedAccountId) {
   }
 }
 
-export async function transferFundsToConnectedAccount(
-  connectedAccountId,
-  amount
-) {
+export async function transferToConnectedAccount(connectedAccountId, amount) {
   try {
+    const account = await stripe.accounts.retrieve(connectedAccountId);
+    if (account.requirements.currently_due.length > 0) {
+      return;
+    }
     const transfer = await stripe.transfers.create({
       amount: amount,
       currency: "eur",
@@ -209,7 +226,7 @@ export async function transferFundsToConnectedAccount(
     });
     return transfer;
   } catch (error) {
-    console.log("Erreur lors du transfert des fonds : " + error.message);
+    throw new Error("Erreur lors du transfert des fonds : " + error.message);
   }
 }
 

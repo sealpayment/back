@@ -47,8 +47,11 @@ app.use("/api/users", UserRouter);
 
 cron.schedule("* * * * *", async () => {
   try {
-    axios.post("http://127.0.0.1:9000/api/missions/complete-today");
-    axios.post("http://127.0.0.1:9000/api/missions/paid-today");
+    await axios.post("http://127.0.0.1:9000/api/missions/complete-today");
+    const res = await axios.post(
+      "http://127.0.0.1:9000/api/missions/paid-today"
+    );
+    console.log(res?.data?.message);
     console.log(
       "Missions vérifiées et mises à jour toutes les minutes pour les tests."
     );

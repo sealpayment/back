@@ -1,11 +1,6 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
-const RequirementSchema = new Schema({
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-});
-
 const MissionSchema = new Schema({
   from_user_sub: { type: String },
   to_user_sub: { type: String },
@@ -26,10 +21,17 @@ const MissionSchema = new Schema({
   paymentLink: { type: String },
   status: {
     type: String,
-    enum: ["draft", "pending", "active", "declined", "completed", "paid"],
+    enum: [
+      "draft",
+      "pending",
+      "active",
+      "declined",
+      "completed",
+      "paid",
+      "error",
+    ],
     default: "draft",
   },
-  requirements: [RequirementSchema],
   createdAt: { type: Date, default: Date.now },
 });
 
