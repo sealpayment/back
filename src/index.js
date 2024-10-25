@@ -23,6 +23,14 @@ const DB_URL =
 const __dirname = path.resolve();
 
 const app = express();
+const corsOptions = {
+  origin: "https://bindpay-dev-68c2b613aebe.herokuapp.com", // Remplacez par l'URL de votre application frontale
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions), json());
 app.use("/api/webhook", WebhookRouter);
 
 app.use(
@@ -38,7 +46,6 @@ app.use(
     extended: true,
   })
 );
-app.use(cors(), json());
 
 app.use("/api/missions", MissionsRouter);
 app.use("/api/payment", PaymentRouter);
