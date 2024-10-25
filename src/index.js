@@ -18,8 +18,9 @@ const PORT = process.env.PORT || 9000;
 const URL = `http://127.0.0.1:${PORT}`;
 const DB_URL =
   process.env.ENV === "production"
-    ? process.env.DB_URL.replace("<password>", process.env.DB_PASSWORD)
+    ? process.env.DB_URL
     : "mongodb://127.0.0.1:27017/bindpay";
+
 const __dirname = path.resolve();
 
 const app = express();
@@ -54,11 +55,10 @@ app.use("/api/users", UserRouter);
 
 cron.schedule("* * * * *", async () => {
   try {
-    await axios.post("http://127.0.0.1:9000/api/missions/complete-today");
+    await axios.post(`${process.env.API_URL}/api/missions/complete-today`);
     const res = await axios.post(
-      "http://127.0.0.1:9000/api/missions/paid-today"
+      `${process.env.API_URL}/api/missions/paid-today`
     );
-    console.log(res?.data?.message);
     console.log(
       "Missions vérifiées et mises à jour toutes les minutes pour les tests."
     );
