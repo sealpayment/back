@@ -79,6 +79,10 @@ router.post("/ask", checkJwt, async (req, res) => {
       "Tristan vous demande de collaborer",
       `Bonjour, Tristan vous demande de payer ${mission.amount}€. Cliquez sur le lien suivant pour payer directement : ${link}`
     );
+    res.status(201).json({
+      message: "Payment link sent successfully",
+      missionId: newMission.id,
+    });
   } catch (error) {
     return res
       .status(500)
@@ -143,8 +147,9 @@ router.post("/complete-today", async (req, res) => {
       },
       { $set: { status: "completed" } }
     );
+    console.log(`Today's missions completed: ${result.modifiedCount}`);
     res.status(200).json({
-      message: `Today's missions completed: ${result.nModified}`,
+      message: `Today's missions completed: ${result.modifiedCount}`,
     });
   } catch (error) {
     console.error("Erreur lors de la complétion des missions:", error);
@@ -164,9 +169,10 @@ router.post("/paid-today", async (req, res) => {
 
   try {
     const missionsToPay = await Mission.find({
-      endDate: { $gte: today, $lt: tomorrow },
+      endDate: { $lt: tomorrow },
       status: "completed",
     });
+
     for (const mission of missionsToPay) {
       const user = await User.findOne({ sub: mission.to_user_sub });
       if (!user) {

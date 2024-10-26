@@ -5,6 +5,8 @@ const stripe = new Stripe(
   "sk_test_51Jp7SJCvCiK1jJUqrLwf4VqfGlf1fXulG7DNjaKRuWqrZfeMLjyCltPLJHcFCwcgWY4yowapIY5UUdqBZPHDbQ6d00PJGnDozg"
 );
 
+const WEBSITE_URL = process.env.WEBSITE_URL;
+
 export async function createStripePaymentLink(mission) {
   try {
     const session = await stripe.checkout.sessions.create({
@@ -20,8 +22,8 @@ export async function createStripePaymentLink(mission) {
         },
       ],
       mode: "payment",
-      success_url: `http://localhost:3000/mission/success?mission_id=${mission.id}`,
-      cancel_url: "http://localhost:3000/mission",
+      success_url: `${WEBSITE_URL}/mission/success?mission_id=${mission.id}`,
+      cancel_url: `${WEBSITE_URL}/mission`,
       metadata: { missionId: mission.id },
     });
     return session.url;

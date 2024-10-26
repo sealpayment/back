@@ -11,6 +11,8 @@ const stripe = new Stripe(
 const endpointSecret =
   "whsec_f245c693f6f06691658f58c38c453ac5b7da667bbc24a5aec5344fe09193c544";
 
+const WEBSITE_URL = process.env.WEBSITE_URL;
+
 const router = express.Router();
 router.post(
   "/",
@@ -29,14 +31,19 @@ router.post(
       const missionId = session.metadata.missionId;
       try {
         const mission = await Mission.findById(missionId);
-        mission.status = "pending";
+        const isMissionAsked = mission.to_user_sub && !mission.from_user_sub;
+        if (isMissionAsked) {
+          mission.status = "active";
+        } else {
+          mission.status = "pending";
+          sendEmail(
+            mission.recipient,
+            "Tristan vous invite à collaborer",
+            `Bonjour, Tristan vous a envoyé ${mission.amount}€ pour collaborer. Cliquez sur le lien suivant pour récupérer votre argent: ` +
+              `${WEBSITE_URL}/accept-mission/${missionId}`
+          );
+        }
         await mission.save();
-        sendEmail(
-          mission.recipient,
-          "Tristan vous invite à collaborer",
-          `Bonjour, Tristan vous a envoyé ${mission.amount}€ pour collaborer. Cliquez sur le lien suivant pour récupérer votre argent: ` +
-            `http://localhost:3000/accept-mission/${missionId}`
-        );
         response.status(200).json({ message: "Mission is now active" });
       } catch (err) {
         response
