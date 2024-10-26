@@ -1,4 +1,5 @@
 import express from "express";
+import dayjs from "dayjs";
 
 import { checkJwt } from "../utils/auth.js";
 import {
@@ -13,7 +14,9 @@ const router = express.Router();
 router.get("/", checkJwt, async ({ user }, res) => {
   const missions = await Mission.find({
     $or: [{ from_user_sub: user.sub }, { to_user_sub: user.sub }],
-  }).exec();
+  })
+    .sort({ endDate: -1 })
+    .exec();
   return res.json(missions);
 });
 
@@ -28,13 +31,6 @@ router.get("/:id", async (req, res) => {
 
 router.post("/create", checkJwt, async (req, res) => {
   const mission = req.body;
-  const { name, description, amount, recipient } = mission;
-  if (!name || !description || !amount || !recipient) {
-    return res
-      .status(400)
-      .json({ message: "Nom, description, montant et email requis" });
-  }
-
   let newMission;
   try {
     newMission = new Mission({

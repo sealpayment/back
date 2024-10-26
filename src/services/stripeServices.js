@@ -15,7 +15,10 @@ export async function createStripePaymentLink(mission) {
         {
           price_data: {
             currency: "eur",
-            product_data: { name: mission.name },
+            product_data: {
+              name: "Ces conditions engage le prestataire à réaliser les obligations suivantes :",
+              description: mission.description,
+            },
             unit_amount: mission.amount * 100, // Montant en centimes
           },
           quantity: 1,

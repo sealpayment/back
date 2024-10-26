@@ -3,6 +3,7 @@ import Stripe from "stripe";
 
 import Mission from "../models/missionModel.js";
 import { sendEmail } from "../services/emailServices.js";
+import dayjs from "dayjs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -39,6 +40,7 @@ router.post(
               `${WEBSITE_URL}/accept-mission/${missionId}`
           );
         }
+        mission.endDate = dayjs().add(7, "day").toDate();
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });
       } catch (err) {

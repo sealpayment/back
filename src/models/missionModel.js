@@ -7,17 +7,10 @@ const MissionSchema = new Schema({
   recipient: {
     type: String,
     required: true,
-    validate: {
-      validator: function (v) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      },
-      message: (props) => `${props.value} is not a valid email address`,
-    },
   },
   amount: { type: Number, required: true },
-  name: { type: String, required: true },
   description: { type: String, required: true },
-  endDate: { type: Date, required: true },
+  endDate: { type: Date },
   paymentLink: { type: String },
   status: {
     type: String,
