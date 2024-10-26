@@ -4,12 +4,8 @@ import Stripe from "stripe";
 import Mission from "../models/missionModel.js";
 import { sendEmail } from "../services/emailServices.js";
 
-const stripe = new Stripe(
-  "sk_test_51Jp7SJCvCiK1jJUqrLwf4VqfGlf1fXulG7DNjaKRuWqrZfeMLjyCltPLJHcFCwcgWY4yowapIY5UUdqBZPHDbQ6d00PJGnDozg"
-);
-
-const endpointSecret =
-  "whsec_f245c693f6f06691658f58c38c453ac5b7da667bbc24a5aec5344fe09193c544";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 const WEBSITE_URL = process.env.WEBSITE_URL;
 
