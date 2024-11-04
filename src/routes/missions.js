@@ -5,6 +5,7 @@ import { checkJwt, getUserByEmail } from "../utils/auth.js";
 import {
   createStripePaymentLink,
   refundToCustomer,
+  transferFromConnectedAccount,
   transferToConnectedAccount,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
@@ -30,18 +31,29 @@ router.get("/:id", async (req, res) => {
   res.json(mission);
 });
 
-router.post("/create", checkJwt, async (req, res) => {
-  const mission = req.body;
+router.post("/create", checkJwt, async ({ user, body }, res) => {
+  const mission = body;
   let newMission;
   try {
     const knownUser = await getUserByEmail(mission.recipient);
     newMission = new Mission({
       ...mission,
-      from_user_sub: req.user.sub,
+      from_user_sub: user.sub,
       to_user_sub: knownUser?.user_id,
     });
-    const link = await createStripePaymentLink(newMission);
-    newMission.paymentLink = link;
+    const fromUser = await User.findOne({ sub: user.sub });
+
+    if (fromUser.connected_account_id && mission.useDeposit) {
+      transferFromConnectedAccount(
+        fromUser.connected_account_id,
+        parseFloat(mission.amount.replace(",", ".")) * 100
+      );
+      newMission.status = "active";
+      newMission.endDate = dayjs().add(7, "minutes").set("second", 0).toDate();
+    } else {
+      const link = await createStripePaymentLink(newMission);
+      newMission.paymentLink = link;
+    }
     await newMission.save();
   } catch (error) {
     return res
@@ -50,7 +62,7 @@ router.post("/create", checkJwt, async (req, res) => {
   }
   res.status(201).json({
     missionId: newMission.id,
-    paymentLink: newMission.paymentLink,
+    paymentLink: newMission?.paymentLink,
   });
 });
 
@@ -101,21 +113,27 @@ router.post("/:id/accept", checkJwt, async (req, res) => {
   }
 });
 
-router.post("/:id/reject", async (req, res) => {
-  const missionId = req.params.id;
-
+router.post("/:id/reject", checkJwt, async ({ params }, res) => {
+  const missionId = params.id;
   try {
     const mission = await Mission.findById(missionId);
     if (!mission) {
       return res.status(404).json({ message: "Mission not found." });
     }
     mission.status = "cancelled";
+    const user = await User.findOne({ sub: mission.from_user_sub });
+    await transferToConnectedAccount(
+      user.connected_account_id,
+      mission.amount * 100
+    );
     await mission.save();
     res
       .status(200)
       .json({ message: "Mission cancelled successfully.", mission });
   } catch (err) {
-    res.status(500).json({ message: "Erreur while rejecting the mission." });
+    res
+      .status(500)
+      .json({ message: "Erreur while cancelling the mission.", error: err });
   }
 });
 

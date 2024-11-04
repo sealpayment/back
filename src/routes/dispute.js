@@ -3,6 +3,8 @@ import express from "express";
 import { checkJwt } from "../utils/auth.js";
 
 import Dispute from "../models/disputeModel.js";
+import Mission from "../models/missionModel.js";
+
 import dayjs from "dayjs";
 
 const router = express.Router();
@@ -36,7 +38,6 @@ router.post("/create", checkJwt, async (req, res) => {
         disputeId: existingDispute.id,
       });
     } else {
-      // Création d'un nouveau litige
       const newDispute = new Dispute({
         missionId: dispute.missionId,
         from_user_sub: req.user.sub,
@@ -50,6 +51,15 @@ router.post("/create", checkJwt, async (req, res) => {
         ],
       });
       await newDispute.save();
+
+      await Mission.findByIdAndUpdate(
+        dispute.missionId,
+        {
+          status: "disputed",
+        },
+        { new: true }
+      ).exec();
+
       return res.status(201).json({
         message: "Dispute created successfully.",
         disputeId: newDispute.id,

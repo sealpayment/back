@@ -221,11 +221,9 @@ export async function getConnectedBanks(connectedAccountId) {
 export async function transferToConnectedAccount(connectedAccountId, amount) {
   try {
     const account = await stripe.accounts.retrieve(connectedAccountId);
-    console.log(account);
     // if (account.requirements.currently_due.length > 0) {
     //   return;
     // }
-    console.log(account);
     const transfer = await stripe.transfers.create({
       amount: amount,
       currency: "eur",
@@ -234,6 +232,31 @@ export async function transferToConnectedAccount(connectedAccountId, amount) {
     return transfer;
   } catch (error) {
     throw new Error("Erreur lors du transfert des fonds : " + error.message);
+  }
+}
+
+export async function transferFromConnectedAccount(connectedAccountId, amount) {
+  try {
+    const account = await stripe.accounts.retrieve();
+
+    const transfer = await stripe.transfers.create(
+      {
+        amount: amount,
+        currency: "eur",
+        destination: account.id,
+        source_type: "card",
+      },
+      {
+        stripeAccount: connectedAccountId, // L'ID du compte connecté
+      }
+    );
+
+    return transfer;
+  } catch (error) {
+    throw new Error(
+      "Erreur lors du transfert des fonds depuis le compte connecté : " +
+        error.message
+    );
   }
 }
 
