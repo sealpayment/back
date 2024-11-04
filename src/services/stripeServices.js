@@ -19,13 +19,13 @@ export async function createStripePaymentLink(mission) {
               name: "Ces conditions engage le prestataire à réaliser les obligations suivantes :",
               description: mission.description,
             },
-            unit_amount: mission.amount * 100, // Montant en centimes
+            unit_amount: mission.amount * 100,
           },
           quantity: 1,
         },
       ],
       mode: "payment",
-      success_url: `${WEBSITE_URL}/mission/success?mission_id=${mission.id}`,
+      success_url: `${WEBSITE_URL}/mission`,
       cancel_url: `${WEBSITE_URL}/mission`,
       metadata: { missionId: mission.id },
     });
@@ -221,9 +221,11 @@ export async function getConnectedBanks(connectedAccountId) {
 export async function transferToConnectedAccount(connectedAccountId, amount) {
   try {
     const account = await stripe.accounts.retrieve(connectedAccountId);
-    if (account.requirements.currently_due.length > 0) {
-      return;
-    }
+    console.log(account);
+    // if (account.requirements.currently_due.length > 0) {
+    //   return;
+    // }
+    console.log(account);
     const transfer = await stripe.transfers.create({
       amount: amount,
       currency: "eur",
@@ -232,6 +234,18 @@ export async function transferToConnectedAccount(connectedAccountId, amount) {
     return transfer;
   } catch (error) {
     throw new Error("Erreur lors du transfert des fonds : " + error.message);
+  }
+}
+
+export async function refundToCustomer(paymentIntentId, amount) {
+  try {
+    const refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      amount: amount,
+    });
+    return refund;
+  } catch (error) {
+    throw new Error("Erreur lors du remboursement : " + error.message);
   }
 }
 

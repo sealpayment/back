@@ -120,3 +120,24 @@ export const updateUser = async (userId, updatedData) => {
     throw new Error("Impossible de mettre à jour l'utilisateur");
   }
 };
+
+export const getUserByEmail = async (email) => {
+  try {
+    const token = await getAuth0Token();
+    const response = await axios.get(
+      `https://dev-pivq3jzqbm4ia5qt.us.auth0.com/api/v2/users-by-email?email=${email}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data[0];
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération de l'utilisateur par email Auth0:",
+      error.response?.data || error.message
+    );
+    throw new Error("Impossible de récupérer l'utilisateur par email");
+  }
+};

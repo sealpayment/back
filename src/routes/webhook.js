@@ -28,11 +28,13 @@ router.post(
       const missionId = session.metadata.missionId;
       try {
         const mission = await Mission.findById(missionId);
+        mission.status = "active";
+        mission.endDate = dayjs().add(7, "minutes").set("second", 0).toDate();
+        mission.paymentIntentId = session.payment_intent;
+        await mission.save();
+
         const isMissionAsked = mission.to_user_sub && !mission.from_user_sub;
-        if (isMissionAsked) {
-          mission.status = "active";
-        } else {
-          mission.status = "pending";
+        if (!isMissionAsked) {
           sendEmail(
             mission.recipient,
             "Tristan vous invite à collaborer",
@@ -40,8 +42,6 @@ router.post(
               `${WEBSITE_URL}/accept-mission/${missionId}`
           );
         }
-        mission.endDate = dayjs().add(7, "day").toDate();
-        await mission.save();
         response.status(200).json({ message: "Mission is now active" });
       } catch (err) {
         response

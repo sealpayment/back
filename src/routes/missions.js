@@ -1,9 +1,10 @@
 import express from "express";
 import dayjs from "dayjs";
 
-import { checkJwt } from "../utils/auth.js";
+import { checkJwt, getUserByEmail } from "../utils/auth.js";
 import {
   createStripePaymentLink,
+  refundToCustomer,
   transferToConnectedAccount,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
@@ -33,9 +34,11 @@ router.post("/create", checkJwt, async (req, res) => {
   const mission = req.body;
   let newMission;
   try {
+    const knownUser = await getUserByEmail(mission.recipient);
     newMission = new Mission({
       ...mission,
       from_user_sub: req.user.sub,
+      to_user_sub: knownUser?.user_id,
     });
     const link = await createStripePaymentLink(newMission);
     newMission.paymentLink = link;
@@ -53,12 +56,6 @@ router.post("/create", checkJwt, async (req, res) => {
 
 router.post("/ask", checkJwt, async (req, res) => {
   const mission = req.body;
-  const { name, description, amount, recipient } = mission;
-  if (!name || !description || !amount || !recipient) {
-    return res
-      .status(400)
-      .json({ message: "Nom, description, montant et email requis" });
-  }
 
   let newMission;
   try {
@@ -94,10 +91,6 @@ router.post("/:id/accept", checkJwt, async (req, res) => {
     if (!mission) {
       return res.status(404).json({ message: "Mission not found." });
     }
-    if (mission.status !== "pending") {
-      return res.status(400).json({ message: "Mission is not available." });
-    }
-    mission.status = "active";
     mission.to_user_sub = req.user.sub;
     await mission.save();
     res
@@ -108,76 +101,93 @@ router.post("/:id/accept", checkJwt, async (req, res) => {
   }
 });
 
-router.post("/missions/:id/reject", async (req, res) => {
+router.post("/:id/reject", async (req, res) => {
   const missionId = req.params.id;
 
   try {
-    const mission = await Mission.findByIdAndUpdate(
-      missionId,
-      { status: "declined" },
-      { new: true }
-    );
+    const mission = await Mission.findById(missionId);
     if (!mission) {
       return res.status(404).json({ message: "Mission not found." });
     }
+    mission.status = "cancelled";
+    await mission.save();
     res
       .status(200)
-      .json({ message: "Mission rejected successfully.", mission });
+      .json({ message: "Mission cancelled successfully.", mission });
   } catch (err) {
     res.status(500).json({ message: "Erreur while rejecting the mission." });
   }
 });
 
 router.post("/complete-today", async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
 
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const twoMinutesInMillis = 2 * 60 * 1000;
 
   try {
-    const result = await Mission.updateMany(
-      {
-        endDate: { $gte: today, $lt: tomorrow },
-        status: "active",
+    const missions = await Mission.find({
+      $expr: {
+        $and: [
+          { $gte: ["$endDate", now] },
+          { $lt: ["$endDate", new Date(now.getTime() + twoMinutesInMillis)] },
+        ],
       },
-      { $set: { status: "completed" } }
-    );
-    console.log(`Today's missions completed: ${result.modifiedCount}`);
+      status: "active",
+    });
+    for (const mission of missions) {
+      mission.status = "completed";
+      await mission.save();
+      sendEmail(
+        mission.recipient,
+        "Votre mission se termine bientôt",
+        `Bonjour, votre mission se termine bientôt. Vous recevrez votre paiement dans les prochaines 48 heures si le destinataire ne signale pas de problème.`
+      );
+    }
     res.status(200).json({
-      message: `Today's missions completed: ${result.modifiedCount}`,
+      message: `Missions completed successfully`,
     });
   } catch (error) {
-    console.error("Erreur lors de la complétion des missions:", error);
     res.status(500).json({
-      message: "Erreur lors de la complétion des missions.",
+      message: "Erreur lors de la mise à jour des missions.",
       error: error.message,
     });
   }
 });
 
 router.post("/paid-today", async (req, res) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const now = new Date();
 
   try {
     const missionsToPay = await Mission.find({
-      endDate: { $lt: tomorrow },
-      status: "completed",
+      $expr: {
+        $lt: ["$endDate", now],
+      },
+      status: { $in: ["completed"] },
     });
 
     for (const mission of missionsToPay) {
-      const user = await User.findOne({ sub: mission.to_user_sub });
-      if (!user) {
-        console.error(`Utilisateur non trouvé pour la mission: ${mission.id}`);
+      const receiver = await User.findOne({ sub: mission.to_user_sub });
+      if (!receiver) {
+        try {
+          const refund = await refundToCustomer(
+            mission.paymentIntentId,
+            mission.amount * 100
+          );
+          if (refund) {
+            mission.status = "refund";
+            await mission.save();
+          }
+        } catch (refundError) {
+          console.error(
+            `Erreur lors du remboursement pour la mission: ${mission.id}`,
+            refundError
+          );
+        }
         continue;
       }
       try {
         const transfer = await transferToConnectedAccount(
-          user.connected_account_id,
+          receiver.connected_account_id,
           mission.amount * 100
         );
         if (transfer) {
@@ -187,14 +197,18 @@ router.post("/paid-today", async (req, res) => {
             `Erreur lors du transfert pour la mission: ${mission.id}`
           );
         }
+        sendEmail(
+          mission.recipient,
+          "Mission terminée",
+          `Bonjour, votre paiement de ${mission.amount}€ est en cours. Vous recevrez l'argent sur votre balance Bindpay d'ici quelques instants.`
+        );
+        await mission.save();
       } catch (transferError) {
         console.error(
           `Erreur lors du transfert pour la mission: ${mission.id}`,
           transferError
         );
-        mission.status = "error";
       }
-      await mission.save();
     }
     res.status(200).json({
       message: `Today's payments successful`,
