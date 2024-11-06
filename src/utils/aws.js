@@ -38,7 +38,7 @@ export const uploadFile = async (filePath, bucketName, key, contentType) => {
 
 export const signedS3Url = async (bucketName, url) => {
   const urlParts = new URL(url);
-  const key = urlParts.pathname.substring(1);
+  const key = decodeURIComponent(urlParts.pathname.substring(1)); // Décodage des caractères spéciaux
   const signedUrl = s3.getSignedUrl("getObject", {
     Bucket: bucketName,
     Key: key,
