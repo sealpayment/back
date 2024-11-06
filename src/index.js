@@ -27,6 +27,11 @@ const __dirname = path.resolve();
 const app = express();
 
 app.use("/api/webhook", WebhookRouter);
+app.use(
+  express.urlencoded({
+    extended: false,
+  })
+);
 app.use(cors(), json());
 
 app.use(
@@ -37,11 +42,6 @@ app.use(
 );
 
 app.use(express.static(path.join(__dirname, "public")));
-app.use(
-  express.urlencoded({
-    extended: true,
-  })
-);
 
 app.use("/api/missions", MissionsRouter);
 app.use("/api/payment", PaymentRouter);
