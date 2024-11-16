@@ -51,7 +51,7 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
       newMission.status = "active";
       newMission.endDate = dayjs().add(7, "minutes").set("second", 0).toDate();
     } else {
-      const link = await createStripePaymentLink(newMission);
+      const link = await createStripePaymentLink(newMission, fromUser);
       newMission.paymentLink = link;
     }
     await newMission.save();
@@ -120,12 +120,14 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
     if (!mission) {
       return res.status(404).json({ message: "Mission not found." });
     }
+    if (mission.status === "active") {
+      const user = await User.findOne({ sub: mission.from_user_sub });
+      await transferToConnectedAccount(
+        user.connected_account_id,
+        mission.amount * 100
+      );
+    }
     mission.status = "cancelled";
-    const user = await User.findOne({ sub: mission.from_user_sub });
-    await transferToConnectedAccount(
-      user.connected_account_id,
-      mission.amount * 100
-    );
     await mission.save();
     res
       .status(200)
