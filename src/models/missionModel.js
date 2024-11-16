@@ -13,6 +13,7 @@ const MissionSchema = new Schema({
   endDate: { type: Date },
   paymentLink: { type: String },
   paymentIntentId: { type: String },
+  currency: { type: String, enum: ["eur", "usd", "gbp"], default: "eur" },
   status: {
     type: String,
     enum: [

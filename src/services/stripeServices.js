@@ -14,7 +14,7 @@ export async function createStripePaymentLink(mission) {
       line_items: [
         {
           price_data: {
-            currency: "eur",
+            currency: mission.currency,
             product_data: {
               name: "Ces conditions engage le prestataire à réaliser les obligations suivantes :",
               description: mission.description,
@@ -296,31 +296,20 @@ export async function getConnectedAccountBalance(connectedAccountId) {
     const balance = await stripe.balance.retrieve({
       stripeAccount: connectedAccountId,
     });
-
     const payouts = await stripe.payouts.list(
       {
-        status: "pending",
+        status: "paid",
         limit: 100,
       },
       {
         stripeAccount: connectedAccountId,
       }
     );
-
-    const totalPayoutsPending = payouts.data.reduce((total, payout) => {
-      return total + payout.amount;
-    }, 0);
-
-    const availableBalance = balance.available.reduce((total, available) => {
-      return total + available.amount;
-    }, 0);
-
-    const balanceAfterPayouts = availableBalance - totalPayoutsPending;
-
     return {
-      availableBalance: availableBalance / 100, // Convertir en EUR
-      totalPayoutsPending: totalPayoutsPending / 100, // Convertir en EUR
-      balanceAfterPayouts: balanceAfterPayouts / 100, // Convertir en EUR
+      payouts: payouts.data,
+      availableBalance: balance.instant_available.reduce((total, available) => {
+        return total + available.amount;
+      }, 0),
     };
   } catch (error) {
     throw new Error(

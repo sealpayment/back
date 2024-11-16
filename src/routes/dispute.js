@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-import { checkJwt } from "../utils/auth.js";
+import { checkJwt, getUser } from "../utils/auth.js";
 
 import Dispute from "../models/disputeModel.js";
 import Mission from "../models/missionModel.js";
@@ -11,6 +11,11 @@ import Mission from "../models/missionModel.js";
 import dayjs from "dayjs";
 import { sendEmail } from "../services/emailServices.js";
 import { uploadFile, signedS3Url } from "../utils/aws.js";
+import { User } from "../models/userModel.js";
+import {
+  refundToCustomer,
+  transferToConnectedAccount,
+} from "../services/stripeServices.js";
 
 const __dirname = path.resolve();
 
@@ -21,12 +26,20 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    console.log(file);
     cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/", checkJwt, async ({ user }, res) => {
+  const userFound = await getUser(user.sub);
+  if (userFound.user_metadata.isAdmin === false) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  const missions = await Mission.find({ status: "disputed" }).exec();
+  res.json(missions);
+});
+
+router.get("/:id", checkJwt, async (req, res) => {
   const missionId = req.params.id;
   const dispute = await Dispute.findOne({ missionId }).exec();
   if (!dispute) {
@@ -36,7 +49,6 @@ router.get("/:id", async (req, res) => {
     dispute.messages.map(async (message) => {
       if (message.file) {
         const signedUrl = await signedS3Url("bindpay-app", message.file);
-        console.log(signedUrl);
         message.file = signedUrl;
       }
       return message;
@@ -47,7 +59,7 @@ router.get("/:id", async (req, res) => {
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Limite de taille de fichier à 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
 }).single("file");
 
 router.post("/create", checkJwt, (req, res) => {
@@ -133,5 +145,41 @@ router.post("/create", checkJwt, (req, res) => {
     }
   });
 });
+
+router.post(
+  "/:missionId/close",
+  checkJwt,
+  async ({ user, params, body }, res) => {
+    const userFound = await getUser(user.sub);
+    if (userFound.user_metadata.isAdmin === false) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const missionId = params.missionId;
+    const dispute = await Dispute.findOne({ missionId }).exec();
+    if (!dispute) {
+      return res.status(404).json({ message: "Dispute not found" });
+    }
+
+    if (dispute.from_user_sub === body.winnerUserId) {
+      const mission = await Mission.findById(missionId).exec();
+      await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
+      mission.status = "refund";
+      await mission.save();
+    } else {
+      await Mission.findByIdAndUpdate(
+        missionId,
+        {
+          status: "complete",
+        },
+        { new: true }
+      ).exec();
+    }
+
+    return res.status(200).json({
+      message: "Mission closed successfully.",
+    });
+  }
+);
 
 export default router;
