@@ -132,7 +132,10 @@ export const getUserByEmail = async (email) => {
         },
       }
     );
-    return response.data[0];
+    const sortedUsers = response.data.sort(
+      (a, b) => new Date(a.created_at) - new Date(b.created_at)
+    );
+    return sortedUsers[0];
   } catch (error) {
     console.error(
       "Erreur lors de la récupération de l'utilisateur par email Auth0:",

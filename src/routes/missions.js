@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { checkJwt, getUserByEmail } from "../utils/auth.js";
 import {
   createStripePaymentLink,
+  payoutToConnectedBankAccount,
   refundToCustomer,
   transferFromConnectedAccount,
   transferToConnectedAccount,
@@ -42,6 +43,7 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
       to_user_sub: knownUser?.user_id,
     });
     const fromUser = await User.findOne({ sub: user.sub });
+    const toUser = await User.findOne({ sub: knownUser?.user_id });
 
     if (fromUser.connected_account_id && mission.useDeposit) {
       transferFromConnectedAccount(
@@ -51,7 +53,7 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
       newMission.status = "active";
       newMission.endDate = dayjs().add(7, "minutes").set("second", 0).toDate();
     } else {
-      const link = await createStripePaymentLink(newMission, fromUser);
+      const link = await createStripePaymentLink(newMission, toUser);
       newMission.paymentLink = link;
     }
     await newMission.save();
@@ -187,7 +189,7 @@ router.post("/paid-today", async (req, res) => {
 
     for (const mission of missionsToPay) {
       const receiver = await User.findOne({ sub: mission.to_user_sub });
-      if (!receiver) {
+      if (!receiver && mission.status !== "refund") {
         try {
           const refund = await refundToCustomer(
             mission.paymentIntentId,
@@ -206,10 +208,11 @@ router.post("/paid-today", async (req, res) => {
         continue;
       }
       try {
-        const transfer = await transferToConnectedAccount(
+        const transfer = await payoutToConnectedBankAccount(
           receiver.connected_account_id,
           mission.amount * 100
         );
+        console.log("Transfer", transfer);
         if (transfer) {
           mission.status = "paid";
         } else {
@@ -220,7 +223,7 @@ router.post("/paid-today", async (req, res) => {
         sendEmail(
           mission.recipient,
           "Mission terminée",
-          `Bonjour, votre paiement de ${mission.amount}€ est en cours. Vous recevrez l'argent sur votre balance Bindpay d'ici quelques instants.`
+          `Bonjour, votre paiement de ${mission.amount}€ est en cours. Vous recevrez l'argent sur votre compte en banque d'ici quelques instants.`
         );
         await mission.save();
       } catch (transferError) {

@@ -7,7 +7,7 @@ const stripe = new Stripe(
 
 const WEBSITE_URL = process.env.WEBSITE_URL;
 
-export async function createStripePaymentLink(mission, fromUser) {
+export async function createStripePaymentLink(mission, toUser) {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -28,15 +28,15 @@ export async function createStripePaymentLink(mission, fromUser) {
       success_url: `${WEBSITE_URL}/mission`,
       cancel_url: `${WEBSITE_URL}/mission`,
       metadata: { missionId: mission.id },
-      // payment_intent_data: {
-      //   application_fee_amount: 100,
-      //   transfer_data: {
-      //     destination: fromUser.connected_account_id,
-      //   },
-      // },
+      payment_intent_data: {
+        transfer_data: {
+          destination: toUser?.connected_account_id,
+        },
+      },
     });
     return session.url;
   } catch (error) {
+    console.log(error);
     throw new Error(
       "Erreur lors de la création du lien de paiement : " + error.message
     );
@@ -313,8 +313,11 @@ export async function getConnectedAccountBalance(connectedAccountId) {
     );
     return {
       payouts: payouts.data,
-      availableBalance: balance.instant_available.reduce((total, available) => {
+      available: balance.available.reduce((total, available) => {
         return total + available.amount / 100;
+      }, 0),
+      pending: balance.pending.reduce((total, pending) => {
+        return total + pending.amount / 100;
       }, 0),
     };
   } catch (error) {
