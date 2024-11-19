@@ -283,6 +283,9 @@ export async function refundToCustomer(paymentIntentId, amount) {
     const reversal = await stripe.transfers.createReversal(transferId, {
       amount: amount,
     });
+    await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+    });
     return reversal;
   } catch (error) {
     console.error(error);
