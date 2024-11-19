@@ -34,6 +34,7 @@ export async function createStripePaymentLink(mission, toUser) {
         },
       },
     });
+    console.log(session);
     return session.url;
   } catch (error) {
     console.log(error);
@@ -268,13 +269,26 @@ export async function transferFromConnectedAccount(connectedAccountId, amount) {
 
 export async function refundToCustomer(paymentIntentId, amount) {
   try {
-    const refund = await stripe.refunds.create({
-      payment_intent: paymentIntentId,
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      paymentIntentId,
+      {
+        expand: ["charges.data.transfer"],
+      }
+    );
+    const charge = await stripe.charges.retrieve(paymentIntent.latest_charge, {
+      expand: ["transfer"],
+    });
+    console.log(charge);
+    const transferId = charge.transfer?.id;
+    const reversal = await stripe.transfers.createReversal(transferId, {
       amount: amount,
     });
-    return refund;
+    return reversal;
   } catch (error) {
-    throw new Error("Erreur lors du remboursement : " + error.message);
+    console.error(error);
+    throw new Error(
+      "Erreur lors de l'annulation du transfert : " + error.message
+    );
   }
 }
 
@@ -302,6 +316,7 @@ export async function getConnectedAccountBalance(connectedAccountId) {
     const balance = await stripe.balance.retrieve({
       stripeAccount: connectedAccountId,
     });
+
     const payouts = await stripe.payouts.list(
       {
         status: "paid",
@@ -311,6 +326,7 @@ export async function getConnectedAccountBalance(connectedAccountId) {
         stripeAccount: connectedAccountId,
       }
     );
+
     return {
       payouts: payouts.data,
       available: balance.available.reduce((total, available) => {

@@ -14,6 +14,7 @@ import { sendEmail } from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
 
 const router = express.Router();
+
 router.get("/", checkJwt, async ({ user }, res) => {
   const missions = await Mission.find({
     $or: [{ from_user_sub: user.sub }, { to_user_sub: user.sub }],
@@ -123,17 +124,11 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
       return res.status(404).json({ message: "Mission not found." });
     }
     if (mission.status === "active") {
-      const user = await User.findOne({ sub: mission.from_user_sub });
-      await transferToConnectedAccount(
-        user.connected_account_id,
-        mission.amount * 100
-      );
+      await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
     }
-    mission.status = "cancelled";
+    mission.status = "refund";
     await mission.save();
-    res
-      .status(200)
-      .json({ message: "Mission cancelled successfully.", mission });
+    res.status(200).json({ message: "Mission refund successfully.", mission });
   } catch (err) {
     res
       .status(500)
