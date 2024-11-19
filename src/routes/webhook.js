@@ -55,17 +55,20 @@ router.post(
   }
 );
 
-router.post("/auth0-post-signup", express.json(), async (req, res) => {
+router.post("/auth0-post-login", express.json(), async (req, res) => {
   try {
     const { userId, email } = req.body;
-    console.log(req.body);
-    console.log("RECEIVED POST SIGNUP EVENT");
+    const existingUser = await User.findOne({ sub: userId });
+    if (existingUser) {
+      return res.status(409).send({ message: "User already exists" });
+    }
     const connectedAccount = await createConnectedAccount({ email });
-    User.create({
+    await User.create({
       sub: userId,
       connected_account_id: connectedAccount.id,
       email,
     });
+    res.status(201).send({ message: "User created successfully" });
   } catch (error) {
     console.error("Error in webhook:", error.message);
     res.status(500).send({ error: error.message });
