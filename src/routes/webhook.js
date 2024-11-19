@@ -4,6 +4,8 @@ import Stripe from "stripe";
 import Mission from "../models/missionModel.js";
 import { sendEmail } from "../services/emailServices.js";
 import dayjs from "dayjs";
+import { createConnectedAccount } from "../services/stripeServices.js";
+import { User } from "../models/userModel.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -52,5 +54,22 @@ router.post(
     response.send();
   }
 );
+
+router.post("/auth0-post-signup", express.json(), async (req, res) => {
+  try {
+    const { userId, email } = req.body;
+    console.log(req.body);
+    console.log("RECEIVED POST SIGNUP EVENT");
+    const connectedAccount = await createConnectedAccount({ email });
+    User.create({
+      sub: userId,
+      connected_account_id: connectedAccount.id,
+      email,
+    });
+  } catch (error) {
+    console.error("Error in webhook:", error.message);
+    res.status(500).send({ error: error.message });
+  }
+});
 
 export default router;

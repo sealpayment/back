@@ -36,18 +36,6 @@ export const checkJwt = (req, res, next) => {
       return res.status(401).send("Token invalide");
     }
     req.user = decoded;
-    const user = await User.findOne({ sub: decoded.sub }).exec();
-    if (!user) {
-      const connectedAccount = await createConnectedAccount();
-      User.create({
-        sub: decoded.sub,
-        connected_account_id: connectedAccount.id,
-      });
-    } else if (!user.connected_account_id) {
-      const connectedAccount = await createConnectedAccount();
-      user.connected_account_id = connectedAccount.id;
-      await user.save();
-    }
     next();
   });
 };

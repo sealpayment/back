@@ -108,6 +108,7 @@ export async function createConnectedAccount(userData) {
       account_token: accountToken.id,
       type: "custom",
       country: "FR",
+      email: userData.email,
       requested_capabilities: ["card_payments", "transfers"],
     });
     return connectedAccount;
@@ -278,7 +279,6 @@ export async function refundToCustomer(paymentIntentId, amount) {
     const charge = await stripe.charges.retrieve(paymentIntent.latest_charge, {
       expand: ["transfer"],
     });
-    console.log(charge);
     const transferId = charge.transfer?.id;
     const reversal = await stripe.transfers.createReversal(transferId, {
       amount: amount,
