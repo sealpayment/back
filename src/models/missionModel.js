@@ -14,6 +14,21 @@ const MissionSchema = new Schema({
   paymentLink: { type: String },
   paymentIntentId: { type: String },
   currency: { type: String, enum: ["eur", "usd", "gbp"], default: "eur" },
+  dispute: {
+    messages: [
+      {
+        from_user_sub: { type: String },
+        message: { type: String },
+        file: { type: String },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    status: {
+      type: String,
+      enum: ["open", "closed", "completed"],
+      default: "closed",
+    },
+  },
   status: {
     type: String,
     enum: [
@@ -24,6 +39,7 @@ const MissionSchema = new Schema({
       "paid",
       "error",
       "refund",
+      "disputed",
     ],
     default: "draft",
   },

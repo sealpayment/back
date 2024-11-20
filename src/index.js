@@ -49,7 +49,7 @@ app.use("/api/stripe", StripeRouter);
 app.use("/api/users", UserRouter);
 app.use("/api/disputes", DisputeRouter);
 
-cron.schedule("*/30 * * * * *", async () => {
+cron.schedule("* * * * *", async () => {
   console.log("Running cron job", new Date());
   try {
     await axios.post(`${process.env.API_URL}/api/missions/complete-today`);
@@ -57,15 +57,6 @@ cron.schedule("*/30 * * * * *", async () => {
     console.log("Error while completing and paying missions", error);
   }
 });
-
-// cron.schedule("*/30 * * * * *", async () => {
-//   console.log("Running cron job", new Date());
-//   try {
-//     await axios.post(`${process.env.API_URL}/api/missions/paid-today`);
-//   } catch (error) {
-//     console.log("Error while completing and paying missions", error);
-//   }
-// });
 
 const httpServer = createServer(app);
 mongoose

@@ -1,21 +1,17 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 
 import { checkJwt, getUser } from "../utils/auth.js";
 
 import Dispute from "../models/disputeModel.js";
 import Mission from "../models/missionModel.js";
 
-import dayjs from "dayjs";
+import { refundToCustomer } from "../services/stripeServices.js";
 import { sendEmail } from "../services/emailServices.js";
+
+import { handleUploadedFile } from "../utils/helpers.js";
 import { uploadFile, signedS3Url } from "../utils/aws.js";
-import { User } from "../models/userModel.js";
-import {
-  refundToCustomer,
-  transferToConnectedAccount,
-} from "../services/stripeServices.js";
 
 const __dirname = path.resolve();
 
@@ -62,87 +58,52 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 }).single("file");
 
-router.post("/create", checkJwt, (req, res) => {
-  upload(req, res, async (err) => {
+function handleMulterUpload(req, res, next) {
+  upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
-      return res.status(400).json({
-        message: "Erreur de téléchargement de fichier",
-        error: err.message,
-      });
+      return handleError(res, 400, "Erreur de téléchargement de fichier", err);
     } else if (err) {
-      return res
-        .status(500)
-        .json({ message: "Erreur serveur", error: err.message });
+      return handleError(res, 500, "Erreur serveur", err);
     }
+    next();
+  });
+}
 
-    const dispute = req.body;
-    let existingDispute;
-    let handledFile = null;
-    if (req.file) {
-      handledFile = await uploadFile(
-        req.file.path,
-        "bindpay-app",
-        req.file.filename,
-        req.file.mimetype
-      );
+router.post("/create", checkJwt, handleMulterUpload, async (req, res) => {
+  const body = req.body;
 
-      await fs.promises.unlink(req.file.path);
-    }
+  const mission = await Mission.findById(body.missionId).exec();
+  if (!mission) {
+    return res.status(404).json({ message: "Mission not found" });
+  }
 
-    try {
-      existingDispute = await Dispute.findOne({
-        missionId: dispute.missionId,
-      }).exec();
-      if (existingDispute) {
-        existingDispute.messages.push({
-          from_user_sub: req.user.sub,
-          message: dispute.message,
-          file: handledFile,
-        });
-        await existingDispute.save();
-        return res.status(200).json({
-          message: "Dispute updated successfully.",
-          disputeId: existingDispute.id,
-        });
-      } else {
-        const newDispute = new Dispute({
-          missionId: dispute.missionId,
-          from_user_sub: req.user.sub,
-          endDate: dayjs().add(12, "hour"),
-          messages: [
-            {
-              from_user_sub: req.user.sub,
-              message: dispute.message,
-              file: handledFile,
-            },
-          ],
-        });
-        await newDispute.save();
+  let handledFile;
+  try {
+    handledFile = await handleUploadedFile(req.file);
+  } catch (error) {
+    return handleError(res, 500, "Erreur serveur", error);
+  }
 
-        const updatedMission = await Mission.findByIdAndUpdate(
-          dispute.missionId,
-          {
-            status: "disputed",
-          },
-          { new: true }
-        ).exec();
+  mission.dispute.messages.push({
+    from_user_sub: req.user.sub,
+    message: body.message,
+    file: handledFile,
+  });
 
-        sendEmail(
-          updatedMission.recipient,
-          "Litige en cours",
-          `Bonjour, un litige a été ouvert pour la mission ${updatedMission.description}.`
-        );
+  if (mission.status === "completed") {
+    sendEmail(
+      mission.recipient,
+      "Litige en cours",
+      `Bonjour, un litige a été ouvert pour la mission ${mission.description}.`
+    );
+    mission.status = "disputed";
+    mission.dispute.status = "open";
+  }
+  await mission.save();
 
-        return res.status(201).json({
-          message: "Dispute created successfully.",
-          disputeId: newDispute.id,
-        });
-      }
-    } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Error while processing the dispute.", error });
-    }
+  return res.status(200).json({
+    message: "Dispute updated successfully.",
+    missionId: mission.id,
   });
 });
 

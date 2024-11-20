@@ -1,13 +1,10 @@
 import express from "express";
 import dayjs from "dayjs";
 
-import { checkJwt, getUserByEmail } from "../utils/auth.js";
+import { checkJwt } from "../utils/auth.js";
 import {
   createStripePaymentLink,
-  payoutToConnectedBankAccount,
   refundToCustomer,
-  transferFromConnectedAccount,
-  transferToConnectedAccount,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
 import { sendEmail } from "../services/emailServices.js";
@@ -111,10 +108,8 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
     if (!mission) {
       return res.status(404).json({ message: "Mission not found." });
     }
-    if (mission.status === "active") {
-      await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
-      mission.status = "refund";
-    }
+    await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
+    mission.status = "refund";
     await mission.save();
     res.status(200).json({ message: "Mission refund successfully.", mission });
   } catch (err) {
@@ -125,16 +120,17 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
 });
 
 router.post("/complete-today", async (req, res) => {
-  const now = new Date();
+  const now = dayjs();
 
-  const twoMinutesInMillis = 2 * 60 * 1000;
-
+  const fortyEightHoursAgo = now.subtract(48, "hour");
   try {
     const missions = await Mission.find({
       $expr: {
         $and: [
-          { $gte: ["$endDate", now] },
-          { $lt: ["$endDate", new Date(now.getTime() + twoMinutesInMillis)] },
+          {
+            $gte: ["$endDate", fortyEightHoursAgo.toDate()],
+          },
+          { $lt: ["$endDate", now.toDate()] },
         ],
       },
       status: "active",

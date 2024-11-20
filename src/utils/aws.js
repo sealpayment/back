@@ -1,21 +1,11 @@
 import AWS from "aws-sdk";
-import fs from "fs"; // Pour lire les fichiers locaux
-import { url } from "inspector";
+import fs from "fs";
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.S3_ACCESS_KEY_ID,
   secretAccessKey: process.env.S3_SECRET_SECRET_ACCESS_KEY,
   region: process.env.S3_REGION,
 });
-
-/**
- * Uploads any file to an S3 bucket.
- * @param {string} filePath - Local path to the file.
- * @param {string} bucketName - The name of the S3 bucket.
- * @param {string} key - The S3 key (path within the bucket) where the file will be stored.
- * @param {string} contentType - MIME type of the file (e.g., "application/pdf", "image/jpeg").
- * @returns {Promise<string>} - Returns the URL of the uploaded file.
- */
 
 export const uploadFile = async (filePath, bucketName, key, contentType) => {
   try {

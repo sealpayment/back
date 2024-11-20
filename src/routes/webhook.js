@@ -31,7 +31,11 @@ router.post(
       try {
         const mission = await Mission.findById(missionId);
         mission.status = "active";
-        mission.endDate = dayjs().add(7, "days").toDate();
+        mission.endDate = dayjs()
+          .add(7, "days")
+          .set("second", 0)
+          .set("millisecond", 0)
+          .toDate();
         mission.paymentIntentId = session.payment_intent;
         await mission.save();
         const isMissionAsked = mission.to_user_sub && !mission.from_user_sub;

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import AWS from "aws-sdk";
+import { uploadFile } from "./aws.js";
 
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -51,4 +52,18 @@ export const generateAccessToken = (id) => {
 
 export const getTokenPayload = (token) => {
   return jwt.decode(token);
+};
+
+export const handleUploadedFile = async (bucketName, file) => {
+  if (file) {
+    const handledFile = await uploadFile(
+      file.path,
+      bucketName,
+      file.filename,
+      file.mimetype
+    );
+    await fs.promises.unlink(file.path);
+    return handledFile;
+  }
+  return null;
 };
