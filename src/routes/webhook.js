@@ -1,9 +1,9 @@
 import express from "express";
 import Stripe from "stripe";
+import dayjs from "dayjs";
 
 import Mission from "../models/missionModel.js";
 import { sendEmail } from "../services/emailServices.js";
-import dayjs from "dayjs";
 import { createConnectedAccount } from "../services/stripeServices.js";
 import { User } from "../models/userModel.js";
 
@@ -31,10 +31,9 @@ router.post(
       try {
         const mission = await Mission.findById(missionId);
         mission.status = "active";
-        mission.endDate = dayjs().add(7, "minutes").set("second", 0).toDate();
+        mission.endDate = dayjs().add(7, "days").toDate();
         mission.paymentIntentId = session.payment_intent;
         await mission.save();
-
         const isMissionAsked = mission.to_user_sub && !mission.from_user_sub;
         if (!isMissionAsked) {
           sendEmail(
@@ -46,6 +45,7 @@ router.post(
         }
         response.status(200).json({ message: "Mission is now active" });
       } catch (err) {
+        console.log(err);
         response
           .status(500)
           .json({ message: "Error updating mission status", error: err });

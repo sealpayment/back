@@ -37,26 +37,14 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
   const mission = body;
   let newMission;
   try {
-    const knownUser = await getUserByEmail(mission.recipient);
+    const recipientUser = await User.findOne({ email: mission.recipient });
     newMission = new Mission({
       ...mission,
       from_user_sub: user.sub,
-      to_user_sub: knownUser?.user_id,
+      to_user_sub: recipientUser?.sub,
     });
-    const fromUser = await User.findOne({ sub: user.sub });
-    const toUser = await User.findOne({ sub: knownUser?.user_id });
-
-    if (fromUser.connected_account_id && mission.useDeposit) {
-      transferFromConnectedAccount(
-        fromUser.connected_account_id,
-        parseFloat(mission.amount.replace(",", ".")) * 100
-      );
-      newMission.status = "active";
-      newMission.endDate = dayjs().add(7, "minutes").set("second", 0).toDate();
-    } else {
-      const link = await createStripePaymentLink(newMission, toUser);
-      newMission.paymentLink = link;
-    }
+    const link = await createStripePaymentLink(newMission, recipientUser);
+    newMission.paymentLink = link;
     await newMission.save();
   } catch (error) {
     return res
@@ -125,8 +113,8 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
     }
     if (mission.status === "active") {
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
+      mission.status = "refund";
     }
-    mission.status = "refund";
     await mission.save();
     res.status(200).json({ message: "Mission refund successfully.", mission });
   } catch (err) {

@@ -34,7 +34,6 @@ export async function createStripePaymentLink(mission, toUser) {
         },
       },
     });
-    console.log(session);
     return session.url;
   } catch (error) {
     console.log(error);
