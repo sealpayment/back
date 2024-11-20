@@ -1,30 +1,17 @@
 import express from "express";
-import multer from "multer";
-import path from "path";
 
-import { checkJwt, getUser } from "../utils/auth.js";
-
+import { multerUpload, checkJwt } from "../middlewares/middleware.js";
 import Dispute from "../models/disputeModel.js";
 import Mission from "../models/missionModel.js";
 
 import { refundToCustomer } from "../services/stripeServices.js";
 import { sendEmail } from "../services/emailServices.js";
 
+import { getUser } from "../utils/auth.js";
 import { handleUploadedFile } from "../utils/helpers.js";
-import { uploadFile, signedS3Url } from "../utils/aws.js";
-
-const __dirname = path.resolve();
+import { signedS3Url } from "../utils/aws.js";
 
 const router = express.Router();
-const uploadDir = path.join(__dirname, "src", "tmp");
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
 
 router.get("/", checkJwt, async ({ user }, res) => {
   const userFound = await getUser(user.sub);
@@ -53,23 +40,7 @@ router.get("/:id", checkJwt, async (req, res) => {
   res.json(dispute);
 });
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-}).single("file");
-
-function handleMulterUpload(req, res, next) {
-  upload(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      return handleError(res, 400, "Erreur de téléchargement de fichier", err);
-    } else if (err) {
-      return handleError(res, 500, "Erreur serveur", err);
-    }
-    next();
-  });
-}
-
-router.post("/create", checkJwt, handleMulterUpload, async (req, res) => {
+router.post("/create", checkJwt, multerUpload, async (req, res) => {
   const body = req.body;
 
   const mission = await Mission.findById(body.missionId).exec();
@@ -81,7 +52,7 @@ router.post("/create", checkJwt, handleMulterUpload, async (req, res) => {
   try {
     handledFile = await handleUploadedFile(req.file);
   } catch (error) {
-    return handleError(res, 500, "Erreur serveur", error);
+    return res.status(500).json({ message: "Error while uploading file" });
   }
 
   mission.dispute.messages.push({
@@ -116,27 +87,18 @@ router.post(
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    const missionId = params.missionId;
-    const dispute = await Dispute.findOne({ missionId }).exec();
-    if (!dispute) {
-      return res.status(404).json({ message: "Dispute not found" });
+    const mission = await Mission.findById(params.missionId).exec();
+    if (!mission) {
+      return res.status(404).json({ message: "Mission not found" });
     }
-
-    if (dispute.from_user_sub === body.winnerUserId) {
-      const mission = await Mission.findById(missionId).exec();
+    if (body.action === "refund") {
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
       mission.status = "refund";
-      await mission.save();
     } else {
-      await Mission.findByIdAndUpdate(
-        missionId,
-        {
-          status: "complete",
-        },
-        { new: true }
-      ).exec();
+      mission.status = "paid";
     }
-
+    mission.dispute.status = "completed";
+    await mission.save();
     return res.status(200).json({
       message: "Mission closed successfully.",
     });
