@@ -59,11 +59,13 @@ router.post("/ask", checkJwt, async (req, res) => {
 
   let newMission;
   try {
+    const recipientUser = await User.findOne({ email: mission.recipient });
     newMission = new Mission({
       ...mission,
+      from_user_sub: recipientUser.sub,
       to_user_sub: req.user.sub,
     });
-    const link = await createStripePaymentLink(newMission);
+    const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
     await newMission.save();
 
