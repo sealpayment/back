@@ -26,7 +26,7 @@ router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
       userFound.connected_account_id
     );
     res.json({
-      message: "Nouveau compte bancaire ajouté avec succès",
+      account_id: bankAccountId,
     });
   } catch (error) {
     console.log(error);

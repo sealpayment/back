@@ -180,18 +180,18 @@ export async function createBankAccount(
   connectedAccountId
 ) {
   try {
-    const existingBanks = await stripe.accounts.listExternalAccounts(
-      connectedAccountId,
-      {
-        object: "bank_account",
-      }
-    );
-    const bankExists = existingBanks.data.some(
-      (bank) => bank.last4 === iban.slice(-4)
-    );
-    if (bankExists) {
-      throw new Error("Le compte bancaire existe déjà.");
-    }
+    // const existingBanks = await stripe.accounts.listExternalAccounts(
+    //   connectedAccountId,
+    //   {
+    //     object: "bank_account",
+    //   }
+    // );
+    // const bankExists = existingBanks.data.some(
+    //   (bank) => bank.last4 === iban.slice(-4)
+    // );
+    // if (bankExists) {
+    //   throw new Error("Le compte bancaire existe déjà.");
+    // }
     const token = await stripe.tokens.create({
       bank_account: {
         country: "FR",

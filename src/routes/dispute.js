@@ -1,7 +1,6 @@
 import express from "express";
 
 import { multerUpload, checkJwt } from "../middlewares/middleware.js";
-import Dispute from "../models/disputeModel.js";
 import Mission from "../models/missionModel.js";
 
 import { refundToCustomer } from "../services/stripeServices.js";
@@ -22,23 +21,23 @@ router.get("/", checkJwt, async ({ user }, res) => {
   res.json(missions);
 });
 
-router.get("/:id", checkJwt, async (req, res) => {
-  const missionId = req.params.id;
-  const dispute = await Dispute.findOne({ missionId }).exec();
-  if (!dispute) {
-    return res.status(404).json({ message: "Dispute not found" });
-  }
-  dispute.messages = await Promise.all(
-    dispute.messages.map(async (message) => {
-      if (message.file) {
-        const signedUrl = await signedS3Url("bindpay-app", message.file);
-        message.file = signedUrl;
-      }
-      return message;
-    })
-  );
-  res.json(dispute);
-});
+// router.get("/:id", checkJwt, async (req, res) => {
+//   const missionId = req.params.id;
+//   const dispute = await Dispute.findOne({ missionId }).exec();
+//   if (!dispute) {
+//     return res.status(404).json({ message: "Dispute not found" });
+//   }
+//   dispute.messages = await Promise.all(
+//     dispute.messages.map(async (message) => {
+//       if (message.file) {
+//         const signedUrl = await signedS3Url("bindpay-app", message.file);
+//         message.file = signedUrl;
+//       }
+//       return message;
+//     })
+//   );
+//   res.json(dispute);
+// });
 
 router.post("/create", checkJwt, multerUpload, async (req, res) => {
   const body = req.body;
