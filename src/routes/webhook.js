@@ -47,8 +47,10 @@ router.post(
               `${WEBSITE_URL}/accept-mission/${missionId}`
           );
         } else {
-          const knownUser = User.findOne({ email: mission.recipient });
-          mission.from_user_sub = knownUser.sub;
+          const recipientUser = await User.findOne({
+            email: mission.recipient,
+          });
+          mission.from_user_sub = recipientUser.sub;
         }
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });
