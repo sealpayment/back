@@ -6,6 +6,7 @@ import Mission from "../models/missionModel.js";
 import { sendEmail } from "../services/emailServices.js";
 import { createConnectedAccount } from "../services/stripeServices.js";
 import { User } from "../models/userModel.js";
+import { getUserByEmail } from "../utils/auth.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -37,7 +38,6 @@ router.post(
           .set("millisecond", 0)
           .toDate();
         mission.paymentIntentId = session.payment_intent;
-        await mission.save();
         const isMissionAsked = mission.to_user_sub && !mission.from_user_sub;
         if (!isMissionAsked) {
           sendEmail(
@@ -46,7 +46,11 @@ router.post(
             `Bonjour, Tristan vous a envoyé ${mission.amount}€ pour collaborer. Cliquez sur le lien suivant pour récupérer votre argent: ` +
               `${WEBSITE_URL}/accept-mission/${missionId}`
           );
+        } else {
+          const knownUser = User.findOne({ email: mission.recipient });
+          mission.from_user_sub = knownUser.sub;
         }
+        await mission.save();
         response.status(200).json({ message: "Mission is now active" });
       } catch (err) {
         console.log(err);
