@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 import mustache from "mustache";
 import fs from "fs";
 
-export const sendEmail = async (email, subject, body) => {
+export const sendEmail = async (email, subject, html) => {
   const transporter = nodemailer.createTransport({
     host: "mail.privateemail.com",
     port: 465,
@@ -17,7 +17,19 @@ export const sendEmail = async (email, subject, body) => {
     from: "Bindpay <notification@ariane.guide>",
     to: email,
     subject: subject,
-    text: body,
+    html: html,
   });
   return emailSent;
+};
+
+export const sendEmailWithTemplate = async (
+  recipient,
+  subject,
+  template,
+  variables
+) => {
+  const file = fs.readFileSync(template, "utf8");
+  console.log(variables);
+  const document = mustache.render(file, variables);
+  return sendEmail(recipient, subject, document);
 };

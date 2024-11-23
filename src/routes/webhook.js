@@ -3,15 +3,20 @@ import Stripe from "stripe";
 import dayjs from "dayjs";
 
 import Mission from "../models/missionModel.js";
-import { sendEmail } from "../services/emailServices.js";
 import { createConnectedAccount } from "../services/stripeServices.js";
 import { User } from "../models/userModel.js";
-import { getUserByEmail } from "../utils/auth.js";
+import { sendEmailWithTemplate } from "../services/emailServices.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 const WEBSITE_URL = process.env.WEBSITE_URL;
+
+const currencyMap = {
+  usd: "$",
+  eur: "€",
+  gbp: "£",
+};
 
 const router = express.Router();
 router.post(
@@ -30,7 +35,7 @@ router.post(
       const session = event.data.object;
       const missionId = session.metadata.missionId;
       try {
-        const mission = await Mission.findById(missionId);
+        const mission = await Mission.findById(missionId).exec();
         mission.status = "active";
         mission.endDate = dayjs()
           .add(7, "days")
@@ -40,11 +45,22 @@ router.post(
         mission.paymentIntentId = session.payment_intent;
         const isMissionAsked = mission.to_user_sub && !mission.from_user_sub;
         if (!isMissionAsked) {
-          sendEmail(
+          const missionData = mission.toObject();
+          sendEmailWithTemplate(
             mission.recipient,
-            "Tristan vous invite à collaborer",
-            `Bonjour, Tristan vous a envoyé ${mission.amount}€ pour collaborer. Cliquez sur le lien suivant pour récupérer votre argent: ` +
-              `${WEBSITE_URL}/accept-mission/${missionId}`
+            `Tristan vous a envoyé ${mission.amount.toFixed(2)}${
+              currencyMap[mission.currency]
+            }`,
+            "./src/templates/new-payment.html",
+            {
+              WEBSITE_URL,
+              ...missionData,
+              title: "Vous avez reçu un paiement",
+              subtitle:
+                "Vous avez reçu un paiement de <strong>{{ amount }}{{ currency }}</strong>",
+              amount: mission.amount.toFixed(2),
+              currency: currencyMap[mission.currency],
+            }
           );
         } else {
           const recipientUser = await User.findOne({

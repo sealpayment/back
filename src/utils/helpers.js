@@ -1,6 +1,10 @@
 import jwt from "jsonwebtoken";
 import AWS from "aws-sdk";
 import { uploadFile } from "./aws.js";
+import fs from "fs";
+import mustache from "mustache";
+
+import { sendEmail } from "../services/emailServices.js";
 
 const jwtSecret = process.env.JWT_SECRET;
 
