@@ -55,13 +55,10 @@ router.post(
             {
               WEBSITE_URL,
               ...missionData,
-              title: "Vous avez reçu un paiement",
-              subtitle: `Vous avez reçu un paiement de ${(
-                <strong>
-                  {{ amount }}
-                  {{ currency }}
-                </strong>
-              )}`,
+              title: "Vous avez reçu un paiement !",
+              subtitle: `Vous avez reçu un paiement de ${mission.amount.toFixed(
+                2
+              )}${currencyMap[mission.currency]}`,
               amount: mission.amount.toFixed(2),
               currency: currencyMap[mission.currency],
             }
