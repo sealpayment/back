@@ -62,7 +62,7 @@ router.post("/ask", checkJwt, async (req, res) => {
     const recipientUser = await User.findOne({ email: mission.recipient });
     newMission = new Mission({
       ...mission,
-      from_user_sub: recipientUser.sub,
+      from_user_sub: recipientUser?.sub,
       to_user_sub: req.user.sub,
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
@@ -110,7 +110,9 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
     if (!mission) {
       return res.status(404).json({ message: "Mission not found." });
     }
-    await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
+    if (mission.paymentIntentId) {
+      await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
+    }
     mission.status = "refund";
     await mission.save();
     res.status(200).json({ message: "Mission refund successfully.", mission });
