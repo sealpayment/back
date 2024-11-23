@@ -7,8 +7,10 @@ import {
   refundToCustomer,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
-import { sendEmail } from "../services/emailServices.js";
+import { sendEmailWithTemplate } from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
+
+const WEBSITE_URL = process.env.WEBSITE_URL;
 
 const router = express.Router();
 
@@ -68,11 +70,21 @@ router.post("/ask", checkJwt, async (req, res) => {
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
     await newMission.save();
-
-    sendEmail(
+    const missionData = newMission.toObject();
+    sendEmailWithTemplate(
       mission.recipient,
-      "Tristan vous demande de collaborer",
-      `Bonjour, Tristan vous demande de payer ${mission.amount}€. Cliquez sur le lien suivant pour payer directement : ${link}`
+      `On vous demande de collaborer sur une mission`,
+      "./src/templates/new-payment.html",
+      {
+        ...missionData,
+        redirect_url: `${WEBSITE_URL}/mission`,
+        title: "Vous avez reçu un paiement !",
+        subtitle: `Vous avez reçu un paiement de ${mission.amount.toFixed(2)}${
+          currencyMap[mission.currency]
+        }`,
+        amount: mission.amount.toFixed(2),
+        currency: currencyMap[mission.currency],
+      }
     );
     res.status(201).json({
       message: "Payment link sent successfully",

@@ -48,13 +48,13 @@ router.post(
           const missionData = mission.toObject();
           sendEmailWithTemplate(
             mission.recipient,
-            `Tristan vous a envoyé ${mission.amount.toFixed(2)}${
+            `On vous a envoyé ${mission.amount.toFixed(2)}${
               currencyMap[mission.currency]
             }`,
             "./src/templates/new-payment.html",
             {
-              WEBSITE_URL,
               ...missionData,
+              redirect_url: `${WEBSITE_URL}/mission`,
               title: "Vous avez reçu un paiement !",
               subtitle: `Vous avez reçu un paiement de ${mission.amount.toFixed(
                 2
