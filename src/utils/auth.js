@@ -2,11 +2,10 @@ import jwt from "jsonwebtoken";
 import jwksRsa from "jwks-rsa";
 import axios from "axios";
 
-import { User } from "../models/userModel.js";
-import { createConnectedAccount } from "../services/stripeServices.js";
+const { AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET } = process.env;
 
 const client = jwksRsa({
-  jwksUri: `https://dev-pivq3jzqbm4ia5qt.us.auth0.com/.well-known/jwks.json`,
+  jwksUri: `https://${AUTH0_DOMAIN}/.well-known/jwks.json`,
 });
 
 const getKey = (header, callback) => {
@@ -26,8 +25,8 @@ export const checkJwt = (req, res, next) => {
   }
 
   const options = {
-    audience: "https://dev-pivq3jzqbm4ia5qt.us.auth0.com/api/v2/",
-    issuer: `https://dev-pivq3jzqbm4ia5qt.us.auth0.com/`,
+    audience: `https://${AUTH0_DOMAIN}/api/v2/`,
+    issuer: `https://${AUTH0_DOMAIN}/`,
     algorithms: ["RS256"],
   };
 
@@ -42,16 +41,12 @@ export const checkJwt = (req, res, next) => {
 
 const getAuth0Token = async () => {
   try {
-    const response = await axios.post(
-      `https://dev-pivq3jzqbm4ia5qt.us.auth0.com/oauth/token`,
-      {
-        client_id: "zRuOJZQRJu4GO2zTvfR8nYVX6AaxQkl6",
-        client_secret:
-          "TpBfO9phNsJ8EeUCH3ymjjVeDejOWJSS5a2s2UMR-5UyU0BWV-4lUmFLM3OoASkO",
-        audience: "https://dev-pivq3jzqbm4ia5qt.us.auth0.com/api/v2/",
-        grant_type: "client_credentials",
-      }
-    );
+    const response = await axios.post(`https://${AUTH0_DOMAIN}/oauth/token`, {
+      client_id: AUTH0_CLIENT_ID,
+      client_secret: AUTH0_CLIENT_SECRET,
+      audience: `https://${AUTH0_DOMAIN}/api/v2/`,
+      grant_type: "client_credentials",
+    });
 
     return response.data.access_token;
   } catch (error) {
@@ -67,7 +62,7 @@ export const getUser = async (userId) => {
   try {
     const token = await getAuth0Token();
     const response = await axios.get(
-      `https://dev-pivq3jzqbm4ia5qt.us.auth0.com/api/v2/users/${userId}`,
+      `https://${AUTH0_DOMAIN}/api/v2/users/${userId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -88,7 +83,7 @@ export const updateUser = async (userId, updatedData) => {
   try {
     const token = await getAuth0Token();
     const response = await axios.patch(
-      `https://dev-pivq3jzqbm4ia5qt.us.auth0.com/api/v2/users/${userId}`,
+      `https://${AUTH0_DOMAIN}/api/v2/users/${userId}`,
       {
         user_metadata: updatedData,
       },
@@ -113,7 +108,7 @@ export const getUserByEmail = async (email) => {
   try {
     const token = await getAuth0Token();
     const response = await axios.get(
-      `https://dev-pivq3jzqbm4ia5qt.us.auth0.com/api/v2/users-by-email?email=${email}`,
+      `https://${AUTH0_DOMAIN}/api/v2/users-by-email?email=${email}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
