@@ -122,6 +122,10 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
     if (!mission) {
       return res.status(404).json({ message: "Mission not found." });
     }
+    if (mission.status === "draft") {
+      await mission.remove();
+      return res.status(200).json({ message: "Mission deleted successfully." });
+    }
     if (mission.paymentIntentId) {
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
     }
