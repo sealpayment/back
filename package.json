@@ -25,6 +25,7 @@
     "apollo-server-express": "^3.10.0",
     "aws-sdk": "^2.1511.0",
     "axios": "^0.27.2",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",

@@ -2,8 +2,16 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const UserSchema = new Schema({
-  email: { type: String, required: true, unique: true },
-  sub: { type: String, required: true, unique: true },
+  email: { type: String },
+  password: { type: String },
+  firstName: { type: String },
+  lastName: { type: String },
+  phone: { type: String },
+  address: { type: String },
+  city: { type: String },
+  country: { type: String },
+  postal: { type: String },
+  dob: { type: String },
   connected_account_id: { type: String },
   createdAt: { type: Date, default: Date.now },
 });

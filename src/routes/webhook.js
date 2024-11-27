@@ -67,7 +67,7 @@ router.post(
           const recipientUser = await User.findOne({
             email: mission.recipient,
           });
-          mission.from_user_sub = recipientUser.sub;
+          mission.from_user_sub = recipientUser._id;
         }
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });
@@ -81,25 +81,5 @@ router.post(
     response.send();
   }
 );
-
-router.post("/auth0-post-login", express.json(), async (req, res) => {
-  try {
-    const { userId, email } = req.body;
-    const existingUser = await User.findOne({ sub: userId });
-    if (existingUser) {
-      return res.status(409).send({ message: "User already exists" });
-    }
-    const connectedAccount = await createConnectedAccount({ email });
-    await User.create({
-      sub: userId,
-      connected_account_id: connectedAccount.id,
-      email,
-    });
-    res.status(201).send({ message: "User created successfully" });
-  } catch (error) {
-    console.error("Error in webhook:", error.message);
-    res.status(500).send({ error: error.message });
-  }
-});
 
 export default router;

@@ -1,6 +1,6 @@
 import express from "express";
 
-import { checkJwt, updateUser, getUser } from "../utils/auth.js";
+import { checkJwt } from "../utils/auth.js";
 import { User } from "../models/userModel.js";
 import { updateConnectedAccount } from "../services/stripeServices.js";
 
@@ -8,7 +8,9 @@ const router = express.Router();
 
 router.get("/me", checkJwt, async ({ user }, res) => {
   try {
-    const userFound = await getUser(user.sub);
+    const userFound = user;
+    delete userFound.password;
+    console.log(userFound);
     res.status(200).json(userFound);
   } catch (error) {
     res.status(500).send(error.message);
@@ -17,10 +19,9 @@ router.get("/me", checkJwt, async ({ user }, res) => {
 
 router.put("/me", checkJwt, async ({ user, body }, res) => {
   try {
-    const userFound = await User.findOne({ sub: user.sub }).exec();
-    const updatedUser = await updateUser(user.sub, body);
     const dateToDob = new Date(body.dob);
-    await updateConnectedAccount(userFound.connected_account_id, {
+    const updatedUser = await User.findByIdAndUpdate(user._id, body);
+    await updateConnectedAccount(user.connected_account_id, {
       email: body.email,
       first_name: body.firstName,
       last_name: body.lastName,

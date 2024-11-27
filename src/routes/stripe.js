@@ -15,15 +15,14 @@ const router = express.Router();
 
 router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
   try {
-    const userFound = await User.findOne({ sub: user.sub });
     const bankAccountId = await createBankAccount(
       body.iban,
       body.accountHolderName,
-      userFound.connected_account_id
+      user.connected_account_id
     );
     await linkAccountToConnectedAccount(
       bankAccountId,
-      userFound.connected_account_id
+      user.connected_account_id
     );
     res.json({
       account_id: bankAccountId,
@@ -38,10 +37,7 @@ router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
 
 router.get("/bank-accounts", checkJwt, async ({ user }, res) => {
   try {
-    const userFound = await User.findOne({ sub: user.sub });
-    const bankAccounts = await getConnectedBanks(
-      userFound.connected_account_id
-    );
+    const bankAccounts = await getConnectedBanks(user.connected_account_id);
     res.json(bankAccounts);
   } catch (error) {
     res.status(500).json({
@@ -53,10 +49,9 @@ router.get("/bank-accounts", checkJwt, async ({ user }, res) => {
 
 router.post("/payout", checkJwt, async ({ user, body }, res) => {
   try {
-    const userFound = await User.findOne({ sub: user.sub });
     const { amount } = body;
     const payout = await payoutToConnectedBankAccount(
-      userFound.connected_account_id,
+      user.connected_account_id,
       amount * 100
     );
     res.json(payout);
@@ -70,10 +65,7 @@ router.post("/payout", checkJwt, async ({ user, body }, res) => {
 
 router.get("/balance", checkJwt, async ({ user }, res) => {
   try {
-    const userFound = await User.findOne({ sub: user.sub });
-    const balance = await getConnectedAccountBalance(
-      userFound.connected_account_id
-    );
+    const balance = await getConnectedAccountBalance(user.connected_account_id);
     res.json(balance);
   } catch (error) {
     res.status(500).json({

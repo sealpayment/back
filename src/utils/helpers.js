@@ -2,9 +2,6 @@ import jwt from "jsonwebtoken";
 import AWS from "aws-sdk";
 import { uploadFile } from "./aws.js";
 import fs from "fs";
-import mustache from "mustache";
-
-import { sendEmail } from "../services/emailServices.js";
 
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -50,12 +47,21 @@ export const generateRandomPassword = (length) => {
   return password;
 };
 
-export const generateAccessToken = (id) => {
-  return jwt.sign(id, jwtSecret);
+export const generateAccessToken = (user) => {
+  return jwt.sign(user, jwtSecret);
 };
 
 export const getTokenPayload = (token) => {
-  return jwt.decode(token);
+  if (!token) {
+    throw new Error("Token manquant");
+  }
+  try {
+    jwt.verify(token, jwtSecret);
+    const decoded = jwt.decode(token);
+    return decoded;
+  } catch (error) {
+    throw new Error("Token invalide");
+  }
 };
 
 export const handleUploadedFile = async (bucketName, file) => {

@@ -6,15 +6,13 @@ import Mission from "../models/missionModel.js";
 import { refundToCustomer } from "../services/stripeServices.js";
 import { sendEmail } from "../services/emailServices.js";
 
-import { getUser } from "../utils/auth.js";
 import { handleUploadedFile } from "../utils/helpers.js";
 import { signedS3Url } from "../utils/aws.js";
 
 const router = express.Router();
 
 router.get("/", checkJwt, async ({ user }, res) => {
-  const userFound = await getUser(user.sub);
-  if (userFound.user_metadata.isAdmin === false) {
+  if (user?.isAdmin === false) {
     return res.status(403).json({ message: "Forbidden" });
   }
   const missions = await Mission.find({ status: "disputed" }).exec();
@@ -81,8 +79,7 @@ router.post(
   "/:missionId/close",
   checkJwt,
   async ({ user, params, body }, res) => {
-    const userFound = await getUser(user.sub);
-    if (userFound.user_metadata.isAdmin === false) {
+    if (user?.isAdmin === false) {
       return res.status(403).json({ message: "Forbidden" });
     }
 

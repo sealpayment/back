@@ -16,7 +16,7 @@ const router = express.Router();
 
 router.get("/", checkJwt, async ({ user }, res) => {
   const missions = await Mission.find({
-    $or: [{ from_user_sub: user.sub }, { to_user_sub: user.sub }],
+    $or: [{ from_user_sub: user._id }, { to_user_sub: user._id }],
   })
     .sort({ endDate: -1 })
     .exec();
@@ -39,8 +39,8 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
     const recipientUser = await User.findOne({ email: mission.recipient });
     newMission = new Mission({
       ...mission,
-      from_user_sub: user.sub,
-      to_user_sub: recipientUser?.sub,
+      from_user_sub: user._id,
+      to_user_sub: recipientUser?._id,
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
@@ -56,16 +56,16 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
   });
 });
 
-router.post("/ask", checkJwt, async (req, res) => {
-  const mission = req.body;
+router.post("/ask", checkJwt, async ({ user, body }, res) => {
+  const mission = body;
 
   let newMission;
   try {
     const recipientUser = await User.findOne({ email: mission.recipient });
     newMission = new Mission({
       ...mission,
-      from_user_sub: recipientUser?.sub,
-      to_user_sub: req.user.sub,
+      from_user_sub: recipientUser?._id,
+      to_user_sub: user._id,
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
@@ -105,7 +105,7 @@ router.post("/:id/accept", checkJwt, async (req, res) => {
     if (!mission) {
       return res.status(404).json({ message: "Mission not found." });
     }
-    mission.to_user_sub = req.user.sub;
+    mission.to_user_sub = req.user._id;
     await mission.save();
     res
       .status(200)
