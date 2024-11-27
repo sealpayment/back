@@ -9,6 +9,7 @@ import {
 import Mission from "../models/missionModel.js";
 import { sendEmailWithTemplate } from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
+import { currencyMap } from "../utils/helpers.js";
 
 const WEBSITE_URL = process.env.WEBSITE_URL;
 
@@ -59,10 +60,9 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
 router.post("/ask", checkJwt, async ({ user, body }, res) => {
   const mission = body;
 
-  let newMission;
   try {
     const recipientUser = await User.findOne({ email: mission.recipient });
-    newMission = new Mission({
+    const newMission = new Mission({
       ...mission,
       from_user_sub: recipientUser?._id,
       to_user_sub: user._id,
@@ -70,20 +70,21 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
     await newMission.save();
-    const missionData = newMission.toObject();
     sendEmailWithTemplate(
       mission.recipient,
-      `On vous demande de collaborer sur une mission`,
+      `${user.firstName} vous demande de collaborer sur une mission`,
       "./src/templates/new-payment.html",
       {
-        ...missionData,
-        redirect_url: `${WEBSITE_URL}/mission`,
-        title: "Vous avez reçu un paiement !",
-        subtitle: `Vous avez reçu un paiement de ${mission.amount.toFixed(2)}${
-          currencyMap[mission.currency]
-        }`,
-        amount: mission.amount.toFixed(2),
-        currency: currencyMap[mission.currency],
+        redirect_url: link,
+        description: newMission.description,
+        title: `Nouvelle collaboration !`,
+        recipient: recipientUser?.firstName,
+        subtitle: `${user.firstName} vous demande de payer ${
+          newMission.amount
+        } ${currencyMap[newMission.currency]} pour démarrer la mission.`,
+        amount: newMission.amount.toFixed(2),
+        currency: currencyMap[newMission.currency],
+        createdAt: dayjs(newMission.createdAt).format("DD/MM/YYYY HH:mm"),
       }
     );
     res.status(201).json({

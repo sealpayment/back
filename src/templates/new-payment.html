@@ -84,12 +84,14 @@
           <p><strong>Description :</strong></p>
           <p>{{ description }}</p>
           <hr />
+          {{#paymentIntentId}}
           <p><strong>Numéro de transaction :</strong> {{ paymentIntentId }}</p>
+          {{/paymentIntentId}}
           <p><strong>Date de la transaction :</strong> {{ createdAt }}</p>
           <p><strong>Montant reçu :</strong> {{ amount }}{{ currency }}</p>
         </div>
         <div class="button">
-          <a href="{{ redirect_url }}" target="_blank">En savoir plus</a>
+          <a href="{{ redirect_url }}" target="_blank">Continuer</a>
         </div>
       </div>
       <div class="footer">

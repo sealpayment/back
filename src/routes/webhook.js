@@ -6,17 +6,12 @@ import Mission from "../models/missionModel.js";
 import { createConnectedAccount } from "../services/stripeServices.js";
 import { User } from "../models/userModel.js";
 import { sendEmailWithTemplate } from "../services/emailServices.js";
+import { currencyMap } from "../utils/helpers.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 const WEBSITE_URL = process.env.WEBSITE_URL;
-
-const currencyMap = {
-  usd: "$",
-  eur: "€",
-  gbp: "£",
-};
 
 const router = express.Router();
 router.post(

@@ -29,7 +29,6 @@ export const sendEmailWithTemplate = async (
   variables
 ) => {
   const file = fs.readFileSync(template, "utf8");
-  console.log(variables);
   const document = mustache.render(file, variables);
   return sendEmail(recipient, subject, document);
 };

@@ -11,7 +11,6 @@ export const checkJwt = async (req, res, next) => {
   if (!token) {
     return res.status(401).send("Token manquant");
   }
-  console.log("Token:", token);
   const payload = getTokenPayload(token);
   const user = await User.findById(payload.user_id).exec();
   req.user = user;

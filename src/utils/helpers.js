@@ -77,3 +77,9 @@ export const handleUploadedFile = async (bucketName, file) => {
   }
   return null;
 };
+
+export const currencyMap = {
+  usd: "$",
+  eur: "€",
+  gbp: "£",
+};
