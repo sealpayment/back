@@ -1,9 +1,6 @@
 import Stripe from "stripe";
 
-// Initialisation de l'instance Stripe avec la clé secrète
-const stripe = new Stripe(
-  "sk_test_51Jp7SJCvCiK1jJUqrLwf4VqfGlf1fXulG7DNjaKRuWqrZfeMLjyCltPLJHcFCwcgWY4yowapIY5UUdqBZPHDbQ6d00PJGnDozg"
-);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const WEBSITE_URL = process.env.WEBSITE_URL;
 
