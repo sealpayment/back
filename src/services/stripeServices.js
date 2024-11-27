@@ -93,9 +93,26 @@ export async function addPaymentMethod(customerId, paymentMethodId) {
 
 export async function createConnectedAccount(userData) {
   try {
+    const dateToDob = new Date(userData.dob);
     const accountToken = await stripe.tokens.create({
       account: {
-        individual: userData,
+        individual: {
+          email: userData.email,
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          address: {
+            line1: userData.address,
+            city: userData.city,
+            country: userData.country,
+            postal_code: userData.postal,
+          },
+          phone: userData.phone,
+          dob: {
+            day: dateToDob.getDate(),
+            month: dateToDob.getMonth() + 1,
+            year: dateToDob.getFullYear(),
+          },
+        },
         business_type: "individual",
         tos_shown_and_accepted: true,
       },
@@ -106,6 +123,10 @@ export async function createConnectedAccount(userData) {
       country: "FR",
       email: userData.email,
       requested_capabilities: ["card_payments", "transfers"],
+      business_profile: {
+        mcc: "7999",
+        product_description: "Prestation de services",
+      },
     });
     return connectedAccount;
   } catch (error) {
@@ -171,24 +192,8 @@ export async function linkAccountToConnectedAccount(
   }
 }
 
-export async function createBankAccount(
-  iban,
-  accountHolderName,
-  connectedAccountId
-) {
+export async function createBankAccount(iban, accountHolderName) {
   try {
-    // const existingBanks = await stripe.accounts.listExternalAccounts(
-    //   connectedAccountId,
-    //   {
-    //     object: "bank_account",
-    //   }
-    // );
-    // const bankExists = existingBanks.data.some(
-    //   (bank) => bank.last4 === iban.slice(-4)
-    // );
-    // if (bankExists) {
-    //   throw new Error("Le compte bancaire existe déjà.");
-    // }
     const token = await stripe.tokens.create({
       bank_account: {
         country: "FR",

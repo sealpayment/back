@@ -6,7 +6,11 @@ import bcrypt from "bcrypt";
 
 import { User } from "../models/userModel.js";
 import { generateAccessToken, getTokenPayload } from "../utils/helpers.js";
-import { createConnectedAccount } from "../services/stripeServices.js";
+import {
+  createBankAccount,
+  createConnectedAccount,
+  linkAccountToConnectedAccount,
+} from "../services/stripeServices.js";
 
 const router = express.Router();
 
@@ -37,7 +41,15 @@ router.post("/sign-up", async (req, res) => {
   if (!user) {
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
-    const connectedAccount = await createConnectedAccount({ email });
+    const connectedAccount = await createConnectedAccount(req.body);
+    console.log("connectedAccount", connectedAccount);
+    const bankAccountId = await createBankAccount(
+      req.body.defaultBankAccount,
+      req.body.first_name + " " + req.body.last_name
+    );
+    console.log("bankAccountId", bankAccountId);
+    await linkAccountToConnectedAccount(bankAccountId, connectedAccount.id);
+    console.log("bankAccount linked to connectedAccount");
     const newUser = new User({
       ...req.body,
       password: passwordHash,
