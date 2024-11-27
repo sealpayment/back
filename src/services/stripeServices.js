@@ -278,14 +278,16 @@ export async function refundToCustomer(paymentIntentId, amount) {
     const charge = await stripe.charges.retrieve(paymentIntent.latest_charge, {
       expand: ["transfer"],
     });
-    const transferId = charge.transfer?.id;
-    const reversal = await stripe.transfers.createReversal(transferId, {
-      amount: amount,
-    });
+    if (charge.transfer) {
+      const transferId = charge?.transfer?.id;
+      await stripe.transfers.createReversal(transferId, {
+        amount: amount,
+      });
+    }
     await stripe.refunds.create({
       payment_intent: paymentIntentId,
     });
-    return reversal;
+    return charge;
   } catch (error) {
     console.error(error);
     throw new Error(
