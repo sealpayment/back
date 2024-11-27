@@ -93,40 +93,16 @@ export async function addPaymentMethod(customerId, paymentMethodId) {
 
 export async function createConnectedAccount(userData) {
   try {
-    const dateToDob = new Date(userData.dob);
-    const accountToken = await stripe.tokens.create({
-      account: {
-        individual: {
-          email: userData.email,
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          address: {
-            line1: userData.address,
-            city: userData.city,
-            country: userData.country,
-            postal_code: userData.postal,
-          },
-          phone: userData.phone,
-          dob: {
-            day: dateToDob.getDate(),
-            month: dateToDob.getMonth() + 1,
-            year: dateToDob.getFullYear(),
-          },
-        },
-        business_type: "individual",
-        tos_shown_and_accepted: true,
-      },
-    });
     const connectedAccount = await stripe.accounts.create({
-      account_token: accountToken.id,
+      account_token: userData.accountToken,
       type: "custom",
       country: "FR",
       email: userData.email,
-      requested_capabilities: ["card_payments", "transfers"],
       business_profile: {
         mcc: "7999",
         product_description: "Prestation de services",
       },
+      requested_capabilities: ["card_payments", "transfers"],
     });
     return connectedAccount;
   } catch (error) {
