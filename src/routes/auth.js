@@ -26,19 +26,6 @@ router.post("/sign-in", async (req, res) => {
       user_id: user.id,
       user_email: user.email,
     });
-    const receivedMissions = await Mission.find({
-      recipient: email,
-    });
-    if (receivedMissions.length > 0) {
-      await Mission.updateMany(
-        {
-          recipient: email,
-        },
-        {
-          to_user_sub: user.id,
-        }
-      );
-    }
     return res.status(200).json({
       accessToken: token,
     });
