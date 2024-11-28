@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const MissionSchema = new Schema({
+  type: { type: String, enum: ["ask", "send"] },
   from_user_sub: { type: String },
   to_user_sub: { type: String },
   recipient: {

@@ -10,6 +10,7 @@ import {
   createConnectedAccount,
   linkAccountToConnectedAccount,
 } from "../services/stripeServices.js";
+import Mission from "../models/missionModel.js";
 
 const router = express.Router();
 
@@ -25,6 +26,19 @@ router.post("/sign-in", async (req, res) => {
       user_id: user.id,
       user_email: user.email,
     });
+    const receivedMissions = await Mission.find({
+      recipient: email,
+    });
+    if (receivedMissions.length > 0) {
+      await Mission.updateMany(
+        {
+          recipient: email,
+        },
+        {
+          to_user_sub: user.id,
+        }
+      );
+    }
     return res.status(200).json({
       accessToken: token,
     });
@@ -41,16 +55,32 @@ router.post("/sign-up", async (req, res) => {
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
     const connectedAccount = await createConnectedAccount(req.body);
-    await linkAccountToConnectedAccount(
-      req.body.bankAccountToken,
-      connectedAccount.id
-    );
+    if (req.body.bankAccountToken)
+      await linkAccountToConnectedAccount(
+        req.body.bankAccountToken,
+        connectedAccount.id
+      );
     const newUser = new User({
       ...req.body,
       password: passwordHash,
       connected_account_id: connectedAccount.id,
     });
     await newUser.save();
+
+    const receivedMissions = await Mission.find({
+      recipient: email,
+    });
+    if (receivedMissions.length > 0) {
+      await Mission.updateMany(
+        {
+          recipient: email,
+        },
+        {
+          to_user_sub: newUser.id,
+        }
+      );
+    }
+
     const token = generateAccessToken({
       user_id: newUser.id,
       user_email: email,

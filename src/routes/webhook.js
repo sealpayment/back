@@ -38,14 +38,15 @@ router.post(
           .set("millisecond", 0)
           .toDate();
         mission.paymentIntentId = session.payment_intent;
-        const isMissionAsked = mission.to_user_sub && !mission.from_user_sub;
+        const isMissionAsked = mission.type === "ask";
         if (!isMissionAsked) {
+          const sender = await User.findById(mission.from_user_sub);
           const missionData = mission.toObject();
           sendEmailWithTemplate(
             mission.recipient,
-            `On vous a envoyé ${mission.amount.toFixed(2)}${
+            `${sender.firstName} vous a envoyé ${mission.amount.toFixed(2)}${
               currencyMap[mission.currency]
-            }`,
+            } !`,
             "./src/templates/new-payment.html",
             {
               ...missionData,
@@ -62,7 +63,7 @@ router.post(
           const recipientUser = await User.findOne({
             email: mission.recipient,
           });
-          mission.from_user_sub = recipientUser._id;
+          mission.from_user_sub = recipientUser?._id;
         }
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });
