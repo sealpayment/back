@@ -28,7 +28,11 @@ export const sendEmailWithTemplate = async (
   template,
   variables
 ) => {
-  const file = fs.readFileSync(template, "utf8");
-  const document = mustache.render(file, variables);
-  return sendEmail(recipient, subject, document);
+  try {
+    const file = fs.readFileSync(template, "utf8");
+    const document = mustache.render(file, variables);
+    return sendEmail(recipient, subject, document);
+  } catch (error) {
+    console.log(error);
+  }
 };

@@ -93,10 +93,13 @@ export async function addPaymentMethod(customerId, paymentMethodId) {
 
 export async function createConnectedAccount(userData) {
   try {
+    if (!userData.accountToken) {
+      throw new Error("Token de compte manquant");
+    }
     const connectedAccount = await stripe.accounts.create({
       account_token: userData.accountToken,
       type: "custom",
-      country: "FR",
+      country: userData.country,
       email: userData.email,
       business_profile: {
         mcc: "7999",
@@ -106,9 +109,7 @@ export async function createConnectedAccount(userData) {
     });
     return connectedAccount;
   } catch (error) {
-    throw new Error(
-      "Erreur lors de la création du compte connecté : " + error.message
-    );
+    console.log(error);
   }
 }
 

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Please Verify Your Email</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=GeistMono:wght@400;700&display=swap"); /* Assurez-vous que l'URL est correcte */
+
+      body {
+        font-family: "GeistMono", Arial, sans-serif; /* Utilisation de GeistMono */
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      .email-container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .header {
+        text-align: center;
+        padding: 10px 0;
+      }
+      .header img {
+        max-width: 140px;
+      }
+      .content {
+        text-align: left;
+        margin-top: 20px;
+      }
+      .content h1 {
+        font-size: 24px;
+        color: #333;
+      }
+      .content p {
+        font-size: 16px;
+        color: #555;
+        line-height: 1.5;
+      }
+      .button {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .button a {
+        text-decoration: none;
+        color: #fff;
+        background-color: #1c92f4;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 12px;
+        color: #777;
+      }
+      .secondary-link {
+        text-align: left;
+        margin-top: 15px;
+        font-size: 14px;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        <img src="https://iili.io/2ou4X5b.png" alt="BindPay Logo" />
+      </div>
+      <div class="content">
+        <h1>Just One More Step to Get Started!</h1>
+        <p>Hi {{ first_name }},</p>
+        <p>
+          Welcome to BindPay! 🎉 We're excited to have you join our community.
+        </p>
+        <p>
+          Before you dive in, we need to confirm your email address to ensure
+          your account is secure and ready to go.
+        </p>
+        <div class="button">
+          <a href="{{ verification_link }}" target="_blank">Verify My Email</a>
+        </div>
+        <!-- <div class="secondary-link">
+          <p>
+            If the button doesn’t work, you can copy and paste the link below
+            into your browser:
+          </p>
+          <p>{{ verification_link }}</p>
+        </div> -->
+        <p>Once you’ve verified your email, you’ll be ready to:</p>
+        <ul>
+          <li>✅ Set up secure, hassle-free transactions.</li>
+          <li>✅ Protect your payments with ease.</li>
+          <li>✅ Enjoy a trusted platform for all your payment needs.</li>
+        </ul>
+        <p>
+          If you didn’t sign up for BindPay or have any questions, please
+          contact us immediately at
+          <a href="mailto:support@bindpay.app">support@bindpay.app</a>.
+        </p>
+        <p>
+          Thanks for choosing BindPay – we can’t wait to help you simplify and
+          secure your payments!
+        </p>
+        <p>Cheers,</p>
+        <p>The BindPay Team</p>
+      </div>
+      <div class="footer">
+        <p>This is an automated message; please do not reply.</p>
+        <p>&copy; 2024 BindPay. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,7 +1,5 @@
 import express from "express";
 import CryptoJS from "crypto-js";
-import fs from "fs";
-import mustache from "mustache";
 import bcrypt from "bcrypt";
 
 import { User } from "../models/userModel.js";
@@ -10,6 +8,7 @@ import {
   createConnectedAccount,
   linkAccountToConnectedAccount,
 } from "../services/stripeServices.js";
+import { sendEmailWithTemplate } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 
 const router = express.Router();
@@ -67,11 +66,20 @@ router.post("/sign-up", async (req, res) => {
         }
       );
     }
-
     const token = generateAccessToken({
       user_id: newUser.id,
       user_email: email,
     });
+    sendEmailWithTemplate(
+      newUser.email,
+      "Please confirm your email",
+      "./src/templates/confirm-email.html",
+      {
+        first_name: newUser.firstName,
+        email: newUser.email,
+        verification_link: `${process.env.API_URL}/api/auth/confirm-email?token=${token}`,
+      }
+    );
     return res.status(200).json({
       accessToken: token,
     });
@@ -79,60 +87,25 @@ router.post("/sign-up", async (req, res) => {
   res.status(400).json({ message: "User already exists" });
 });
 
-router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body;
-  const documentPath = fs.readFileSync(
-    "./src/templates/forgot-password.html",
-    "utf-8"
-  );
-  const user = await User.findOne({ email }).exec();
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
-  }
-  const token = generateAccessToken(user.id);
-  const newPasswordLink = `${process.env.API_URL}/new-password?token=${token}`;
-  const resetPasswordDocument = mustache.render(documentPath, {
-    newPasswordLink,
-    ...translations[user.language],
-  });
-
-  await sendEmail(
-    email,
-    translations[user.language].forgotPassword.title,
-    resetPasswordDocument
-  );
-  res.status(200).json({ message: "New password link sent" });
-});
-
-router.post("/new-password", async (req, res) => {
-  const { newPassword, confirmPassword, token } = req.body;
-  const userId = getTokenPayload(token);
-  const user = await User.findOne({ _id: userId }).exec();
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
-  }
-  if (newPassword !== confirmPassword) {
-    return res.status(400).json({
-      message: translations[user.language].newPassword.passwordsMatch,
-      error: true,
-    });
-  }
-  if (newPassword.length < 8) {
-    return res.status(400).json({
-      message: translations[user.language].newPassword.passwordLength,
-      error: true,
-    });
-  }
-  const newPasswordHash = CryptoJS.SHA256(newPassword).toString();
-  user.password = newPasswordHash;
-  try {
+router.get("/confirm-email", async (req, res) => {
+  const { token } = req.query;
+  const { user_id } = getTokenPayload(token);
+  const user = await User.findById(user_id);
+  if (user) {
+    user.emailVerified = true;
     await user.save();
-  } catch (error) {
-    return res
-      .status(400)
-      .json({ message: "Error updating password", error: true });
+    sendEmailWithTemplate(
+      user.email,
+      "Welcome to Bindpay",
+      "./src/templates/email-verified.html",
+      {
+        first_name: user.firstName,
+        get_started_link: `${process.env.WEBSITE_URL}/mission`,
+      }
+    );
+    return res.redirect(`${process.env.WEBSITE_URL}/mission`);
   }
-  return res.status(200).json({ message: "Password updated" });
+  res.status(400).json({ message: "Invalid token" });
 });
 
 export default router;
