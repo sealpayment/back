@@ -29,8 +29,12 @@ export const sendEmailWithTemplate = async (
   variables
 ) => {
   try {
+    const logo = fs.readFileSync("./src/templates/logo.png").toString("base64");
     const file = fs.readFileSync(template, "utf8");
-    const document = mustache.render(file, variables);
+    const document = mustache.render(file, {
+      ...variables,
+      logo,
+    });
     return sendEmail(recipient, subject, document);
   } catch (error) {
     console.log(error);
