@@ -89,23 +89,26 @@ router.post("/sign-up", async (req, res) => {
 
 router.get("/confirm-email", async (req, res) => {
   const { token } = req.query;
-  const { user_id } = getTokenPayload(token);
-  const user = await User.findById(user_id);
-  if (user) {
-    user.emailVerified = true;
-    await user.save();
-    sendEmailWithTemplate(
-      user.email,
-      "Welcome to Bindpay",
-      "./src/templates/email-verified.html",
-      {
-        first_name: user.firstName,
-        get_started_link: `${process.env.WEBSITE_URL}/mission`,
-      }
-    );
-    return res.redirect(`${process.env.WEBSITE_URL}/mission`);
+  try {
+    const { user_id } = getTokenPayload(token);
+    const user = await User.findById(user_id);
+    if (user) {
+      user.emailVerified = true;
+      await user.save();
+      sendEmailWithTemplate(
+        user.email,
+        "Welcome to Bindpay",
+        "./src/templates/email-verified.html",
+        {
+          first_name: user.firstName,
+          get_started_link: `${process.env.WEBSITE_URL}/mission`,
+        }
+      );
+      return res.redirect(`${process.env.WEBSITE_URL}/mission`);
+    }
+  } catch (error) {
+    res.status(400).json({ message: "Invalid token" });
   }
-  res.status(400).json({ message: "Invalid token" });
 });
 
 export default router;
