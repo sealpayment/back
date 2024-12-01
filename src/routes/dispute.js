@@ -6,7 +6,7 @@ import Mission from "../models/missionModel.js";
 import { refundToCustomer } from "../services/stripeServices.js";
 import { sendEmail, sendEmailWithTemplate } from "../services/emailServices.js";
 
-import { handleUploadedFile } from "../utils/helpers.js";
+import { currencyMap, handleUploadedFile } from "../utils/helpers.js";
 import { signedS3Url } from "../utils/aws.js";
 import { User } from "../models/userModel.js";
 import dayjs from "dayjs";
@@ -72,9 +72,9 @@ router.post(
         {
           client_first_name: client.firstName,
           amount: mission.amount.toFixed(2),
-          currency: mission.currency,
+          currency: currencyMap[mission.currency],
           provider_email: provider.email,
-          dispute_url: `${process.env.WEBSITE_URL}/dispute/${mission.id}`,
+          dispute_url: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
         }
       );
       sendEmailWithTemplate(
@@ -84,10 +84,10 @@ router.post(
         {
           provider_first_name: provider.firstName,
           amount: mission.amount.toFixed(2),
-          currency: mission.currency,
+          currency: currencyMap[mission.currency],
           client_email: client.email,
           mission_number: mission.id,
-          dispute_url: `${process.env.WEBSITE_URL}/dispute/${mission.id}`,
+          dispute_url: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
           dispute_decision_deadline: dayjs(mission.endDate).format(
             "MMMM DD, YYYY"
           ),
@@ -102,6 +102,16 @@ router.post(
         "./src/templates/dispute-answered-provider.html",
         {
           provider_first_name: provider.firstName,
+          mission_number: mission.id,
+          resolution_deadline: dayjs(mission.endDate).format("MMMM DD, YYYY"),
+        }
+      );
+      sendEmailWithTemplate(
+        client.email,
+        "Your Dispute Has Been Answered",
+        "./src/templates/dispute-answered-provider.html",
+        {
+          provider_first_name: client.firstName,
           mission_number: mission.id,
           resolution_deadline: dayjs(mission.endDate).format("MMMM DD, YYYY"),
         }
@@ -142,7 +152,7 @@ router.post(
       {
         name: client.firstName,
         amount: mission.amount.toFixed(2),
-        currency: mission.currency,
+        currency: currencyMap[mission.currency],
         email: provider.email,
         outcome_description:
           body.action === "refund"
@@ -157,7 +167,7 @@ router.post(
       {
         name: provider.firstName,
         amount: mission.amount.toFixed(2),
-        currency: mission.currency,
+        currency: currencyMap[mission.currency],
         email: client.email,
         outcome_description:
           body.action === "refund"
@@ -205,7 +215,7 @@ router.post("/check-disputes", async (req, res) => {
             client_first_name: client.firstName,
             provider_first_name: provider.firstName,
             mission_number: mission.id,
-            currency: mission.currency,
+            currency: currencyMap[mission.currency],
             amount: mission.amount.toFixed(2),
           }
         );
@@ -216,7 +226,7 @@ router.post("/check-disputes", async (req, res) => {
           {
             name: client.firstName,
             amount: mission.amount.toFixed(2),
-            currency: mission.currency,
+            currency: currencyMap[mission.currency],
             email: provider.email,
             outcome_description:
               "Funds have been refunded to your payment method due to no response from the provider.",

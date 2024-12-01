@@ -166,7 +166,7 @@ router.post("/complete-today", async (req, res) => {
           provider_email: provider.email,
           currency: currencyMap[mission.currency],
           amount: mission.amount.toFixed(2),
-          dispute_url: `${WEBSITE_URL}/dispute/${mission.id}`,
+          dispute_url: `${WEBSITE_URL}/mission/dispute/${mission.id}`,
         }
       );
       sendEmailWithTemplate(

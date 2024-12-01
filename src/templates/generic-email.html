@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dispute Response Received</title>
+    <title>Dispute Opened</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -31,13 +31,13 @@
         margin-top: 20px;
       }
       .content h1 {
-        font-size: 22px;
+        font-size: 24px;
         color: #333;
       }
       .content p {
         font-size: 16px;
         color: #555;
-        line-height: 1.5;
+        line-height: 1.6;
       }
       .details {
         margin: 20px 0;
@@ -54,6 +54,18 @@
       .details strong {
         color: #333;
       }
+      .button {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .button a {
+        text-decoration: none;
+        color: #fff;
+        background-color: #1c92f4;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+      }
       .footer {
         text-align: center;
         margin-top: 30px;
@@ -68,29 +80,39 @@
         <img src="https://iili.io/2ou4X5b.png" alt="BindPay Logo" />
       </div>
       <div class="content">
-        <h1>Our Team Is Reviewing Your Submission</h1>
-        <p>Hi {{ provider_first_name }},</p>
+        <h1>{title}</h1>
+        <p>Hi {{ name }},</p>
         <p>
-          Thank you for submitting to the dispute regarding the
-          <strong>mission #{{ mission_number }}</strong>.
+          We have received your dispute for the payment of
+          <strong>{{ currency }}{{ amount }}</strong> to
+          <strong>{{ provider_email }}</strong>.
         </p>
         <div class="details">
-          <p><strong>What happens next?</strong></p>
+          <p><strong>{{ detail_title }}</strong></p>
           <p>
-            - Our team will carefully review the evidence you provided.<br />
-            - A decision will be made by
-            <strong>{{ resolution_deadline }}</strong>.
+            1. The provider has 24 hours to respond to the dispute and provide
+            relevant information.
+          </p>
+          <p>
+            2. BindPay will review the dispute and settle it within 12 hours.
+            Depending on the resolution, you will either receive a refund or the
+            payment will be released to the provider.
           </p>
         </div>
+        <div class="button">
+          <a href="{{ dispute_url }}" target="_blank">View Dispute Details</a>
+        </div>
         <p>
-          We will notify you of the outcome as soon as a resolution is reached.
-          If you have further questions, feel free to contact us at
-          <a href="mailto:support@bindpay.com">support@bindpay.com</a>.
+          If you have any questions or need further assistance, feel free to
+          contact us at
+          <a href="mailto:support@bindpay.app">support@bindpay.app</a>.
         </p>
+        <p>We’re here to help,</p>
+        <p>The BindPay Team</p>
       </div>
       <div class="footer">
-        <p>Thank you for your patience,</p>
-        <p>The BindPay Team</p>
+        <p>This is an automated message; please do not reply.</p>
+        <p>&</p>
       </div>
     </div>
   </body>
