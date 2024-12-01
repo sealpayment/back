@@ -38,33 +38,32 @@ router.post(
           .set("millisecond", 0)
           .toDate();
         mission.paymentIntentId = session.payment_intent;
-        const isMissionAsked = mission.type === "ask";
-        if (!isMissionAsked) {
-          const sender = await User.findById(mission.from_user_sub);
-          const missionData = mission.toObject();
-          sendEmailWithTemplate(
-            mission.recipient,
-            `${sender.firstName} vous a envoyé ${mission.amount.toFixed(2)}${
-              currencyMap[mission.currency]
-            } !`,
-            "./src/templates/new-payment.html",
-            {
-              ...missionData,
-              redirect_url: `${WEBSITE_URL}/mission`,
-              title: "Vous avez reçu un paiement !",
-              subtitle: `Vous avez reçu un paiement de ${mission.amount.toFixed(
-                2
-              )}${currencyMap[mission.currency]}`,
-              amount: mission.amount.toFixed(2),
-              currency: currencyMap[mission.currency],
-            }
-          );
-        } else {
-          const recipientUser = await User.findOne({
-            email: mission.recipient,
-          });
-          mission.from_user_sub = recipientUser?._id;
-        }
+        const sender = await User.findById(mission.from_user_sub);
+        const client = await User.findById(mission.to_user_sub);
+        sendEmailWithTemplate(
+          client.email,
+          `You Received a Payment from ${sender.email}`,
+          "./src/templates/mission-received.html",
+          {
+            recipient_name: client?.firstName,
+            client_email: sender.email,
+            currency: currencyMap[mission.currency],
+            amount: mission.amount.toFixed(2),
+            specifications: mission.description,
+          }
+        );
+        sendEmailWithTemplate(
+          sender.email,
+          `You Paid ${client.email}`,
+          "./src/templates/create-mission-success.html",
+          {
+            client_email: client.email,
+            currency: currencyMap[mission.currency],
+            amount: mission.amount.toFixed(2),
+            specifications: mission.description,
+          }
+        );
+
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });
       } catch (err) {

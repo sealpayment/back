@@ -72,19 +72,17 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     await newMission.save();
     sendEmailWithTemplate(
       mission.recipient,
-      `${user.firstName} vous demande de collaborer sur une mission`,
-      "./src/templates/new-payment.html",
+      "You Received A Payment Request",
+      recipientUser?._id
+        ? "./src/templates/payment-request-user.html"
+        : "./src/templates/payment-request-anonymous.html",
       {
-        redirect_url: link,
-        description: newMission.description,
-        title: `Nouvelle collaboration !`,
-        recipient: recipientUser?.firstName,
-        subtitle: `${user.firstName} vous demande de payer ${
-          newMission.amount
-        } ${currencyMap[newMission.currency]} pour démarrer la mission.`,
-        amount: newMission.amount.toFixed(2),
-        currency: currencyMap[newMission.currency],
-        createdAt: dayjs(newMission.createdAt).format("DD/MM/YYYY HH:mm"),
+        provider_email: user.email,
+        currency: currencyMap[mission.currency],
+        amount: mission.amount.toFixed(2),
+        specifications: mission.description,
+        approve_link: `${WEBSITE_URL}/auth/login?email=${mission.recipient}`,
+        signup_link: `${WEBSITE_URL}/auth/register?email=${mission.recipient}`,
       }
     );
     res.status(201).json({
