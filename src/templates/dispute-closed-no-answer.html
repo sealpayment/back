@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dispute Resolution Notification</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      .email-container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .header {
+        text-align: center;
+        padding: 20px 0;
+      }
+      .header img {
+        max-width: 140px;
+      }
+      .content {
+        text-align: left;
+        margin-top: 20px;
+      }
+      .content h1 {
+        font-size: 22px;
+        color: #333;
+      }
+      .content p {
+        font-size: 16px;
+        color: #555;
+        line-height: 1.5;
+      }
+      .details {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .details p {
+        margin: 5px 0;
+        font-size: 16px;
+        color: #444;
+      }
+      .details strong {
+        color: #333;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 12px;
+        color: #777;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        <img src="https://iili.io/2ou4X5b.png" alt="BindPay Logo" />
+      </div>
+      <div class="content">
+        <h1>No Response Received – Funds Returned to Payer</h1>
+        <p>Hi {{ provider_first_name }},</p>
+        <p>
+          We have not received a response from you regarding the objections
+          raised by <strong>{{ client_first_name }}</strong> for the
+          <strong>mission #{{ mission_number }}</strong>.
+        </p>
+        <div class="details">
+          <p><strong>Resolution:</strong></p>
+          <p>
+            As per our terms, the funds of
+            <strong>{{ currency }}{{ amount }}</strong> will be returned to your
+            client, <strong>{{ client_first_name }}</strong>.
+          </p>
+        </div>
+        <p>
+          If you have any questions or need assistance, please contact us at
+          <a href="mailto:support@bindpay.com">support@bindpay.com</a>.
+        </p>
+      </div>
+      <div class="footer">
+        <p>Thank you for using BindPay,</p>
+        <p>The BindPay Team</p>
+      </div>
+    </div>
+  </body>
+</html>

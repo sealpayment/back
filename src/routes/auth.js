@@ -56,15 +56,13 @@ router.post("/sign-up", async (req, res) => {
     const receivedMissions = await Mission.find({
       recipient: email,
     });
-    if (receivedMissions.length > 0) {
-      await Mission.updateMany(
-        {
-          recipient: email,
-        },
-        {
-          to_user_sub: newUser.id,
-        }
-      );
+    for (const mission of receivedMissions) {
+      if (mission.type === "ask") {
+        mission.from_user_sub = newUser.id;
+      } else {
+        mission.to_user_sub = newUser.id;
+      }
+      await mission.save();
     }
     const token = generateAccessToken({
       user_id: newUser.id,

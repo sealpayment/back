@@ -49,10 +49,28 @@ app.use("/api/stripe", StripeRouter);
 app.use("/api/users", UserRouter);
 app.use("/api/disputes", DisputeRouter);
 
-cron.schedule("* * * * *", async () => {
+cron.schedule("0 * * * *", async () => {
   console.log("Running cron job", new Date());
   try {
     await axios.post(`${process.env.API_URL}/api/missions/complete-today`);
+  } catch (error) {
+    console.log("Error while completing and paying missions", error);
+  }
+});
+
+cron.schedule("0 * * * *", async () => {
+  console.log("Running cron job", new Date());
+  try {
+    await axios.post(`${process.env.API_URL}/api/missions/clients-reminder`);
+  } catch (error) {
+    console.log("Error while completing and paying missions", error);
+  }
+});
+
+cron.schedule("0 * * * *", async () => {
+  console.log("Running cron job", new Date());
+  try {
+    await axios.post(`${process.env.API_URL}/api/disputes/check-disputes`);
   } catch (error) {
     console.log("Error while completing and paying missions", error);
   }

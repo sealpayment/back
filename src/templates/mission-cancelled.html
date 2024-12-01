@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Payment Notification</title>
+    <title>Payment Refunded</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -37,34 +37,22 @@
       .content p {
         font-size: 16px;
         color: #555;
-        line-height: 1.5;
+        line-height: 1.6;
       }
-      .transaction-details {
-        margin-top: 20px;
+      .details {
+        margin: 20px 0;
         padding: 15px;
         background-color: #f9f9f9;
         border: 1px solid #ddd;
         border-radius: 5px;
       }
-      .transaction-details p {
+      .details p {
         margin: 5px 0;
         font-size: 16px;
         color: #444;
       }
-      .transaction-details strong {
+      .details strong {
         color: #333;
-      }
-      .button {
-        text-align: center;
-        margin-top: 20px;
-      }
-      .button a {
-        text-decoration: none;
-        color: #fff;
-        background-color: #1c92f4;
-        padding: 12px 20px;
-        border-radius: 5px;
-        font-size: 16px;
       }
       .footer {
         text-align: center;
@@ -80,28 +68,27 @@
         <img src="https://iili.io/2ou4X5b.png" alt="BindPay Logo" />
       </div>
       <div class="content">
-        <h1>You Received a Payment !</h1>
-        <p>Dear {{ recipient_name }},</p>
+        <h1>Your Mission Has Been Cancelled</h1>
+        <p>Hi {{ client_first_name }},</p>
         <p>
-          Great news! {{ sender_first_name }} has sent a payment for your
-          services. The funds are now securely held in BindPay.
+          The mission associated with your payment of
+          <strong>{{ currency }}{{ amount }}</strong> has been canceled by the
+          provider (<strong>{{ provider_email }}</strong>). As a result, the
+          full payment has been automatically refunded to your payment method.
         </p>
-        <div class="transaction-details">
-          <p><strong>Payment Details:</strong></p>
-          <p><strong>Client Email:</strong> {{ sender_email }}</p>
+        <div class="details">
+          <p><strong>Transaction Details:</strong></p>
+          <p><strong>Provider:</strong> {{ provider_email }}</p>
           <p><strong>Amount:</strong> {{ currency }}{{ amount }}</p>
-          <p><strong>Specifications:</strong> {{ specifications }}</p>
+          <p><strong>Reason:</strong> Mission Cancelled</p>
         </div>
-        <p><strong>What’s Next?</strong></p>
-        <p>- Complete the mission by <strong>{{ completed_date }}</strong></p>
-        <p>- Ensure your work aligns with the specifications.</p>
         <p>
-          If you have any questions or need assistance, please contact our
-          support team at
+          If you have any questions about this refund or need further
+          assistance, please reply to this email or contact us at
           <a href="mailto:support@bindpay.app">support@bindpay.app</a>.
         </p>
         <p>Thank you for using BindPay!</p>
-        <p>Sincerely,</p>
+        <p>Secure payments made easy,</p>
         <p>The BindPay Team</p>
       </div>
       <div class="footer">
