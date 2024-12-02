@@ -1,9 +1,0 @@
-{
-  "disputes": {
-    "disputeOpenedClient": {
-      "subject": "A Dispute Has Been Opened",
-      "title": "Your Dispute Is Opened",
-      "body": "Your dispute has been answered by the client. Please login to your account to view the response"
-    }
-  }
-}

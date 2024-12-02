@@ -4,7 +4,7 @@ import { multerUpload, checkJwt } from "../middlewares/middleware.js";
 import Mission from "../models/missionModel.js";
 
 import { refundToCustomer } from "../services/stripeServices.js";
-import { sendEmail, sendEmailWithTemplate } from "../services/emailServices.js";
+import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 
 import { currencyMap, handleUploadedFile } from "../utils/helpers.js";
 import { signedS3Url } from "../utils/aws.js";
@@ -62,60 +62,39 @@ router.post(
     mission.status = "disputed";
     mission.dispute.status = "open";
     await mission.save();
+    const client = await User.findById(mission.from_user_sub);
+    const provider = await User.findById(mission.to_user_sub);
     if (mission.dispute.messages.length === 1) {
-      const client = await User.findById(mission.from_user_sub);
-      const provider = await User.findById(mission.to_user_sub);
-      sendEmailWithTemplate(
-        client.email,
-        "Your Dispute Is Opened",
-        "./src/templates/dispute-opened-client.html",
-        {
-          client_first_name: client.firstName,
-          amount: mission.amount.toFixed(2),
-          currency: currencyMap[mission.currency],
-          provider_email: provider.email,
-          dispute_url: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
-        }
-      );
-      sendEmailWithTemplate(
-        provider.email,
-        "A Dispute Has Been Opened",
-        "./src/templates/dispute-opened-provider.html",
-        {
-          provider_first_name: provider.firstName,
-          amount: mission.amount.toFixed(2),
-          currency: currencyMap[mission.currency],
-          client_email: client.email,
-          mission_number: mission.id,
-          dispute_url: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
-          dispute_decision_deadline: dayjs(mission.endDate).format(
-            "MMMM DD, YYYY"
-          ),
-        }
-      );
+      sendEmailWithTemplateKey(client.email, "disputeOpenedClient", {
+        name: client.firstName,
+        currency: currencyMap[mission.currency],
+        amount: mission.amount,
+        email: provider.email,
+        action_url: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
+      });
+      sendEmailWithTemplateKey(provider.email, "disputeOpenedProvider", {
+        name: provider.firstName,
+        currency: currencyMap[mission.currency],
+        amount: mission.amount,
+        email: client.email,
+        action_url: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
+        mission_id: mission.id,
+      });
     }
     if (mission.dispute.messages.length === 2) {
-      const provider = await User.findById(mission.to_user_sub);
-      sendEmailWithTemplate(
-        provider.email,
-        "Your Dispute Has Been Received",
-        "./src/templates/dispute-answered-provider.html",
-        {
-          provider_first_name: provider.firstName,
-          mission_number: mission.id,
-          resolution_deadline: dayjs(mission.endDate).format("MMMM DD, YYYY"),
-        }
-      );
-      sendEmailWithTemplate(
-        client.email,
-        "Your Dispute Has Been Answered",
-        "./src/templates/dispute-answered-provider.html",
-        {
-          provider_first_name: client.firstName,
-          mission_number: mission.id,
-          resolution_deadline: dayjs(mission.endDate).format("MMMM DD, YYYY"),
-        }
-      );
+      sendEmailWithTemplateKey(provider.email, "disputeAnswered", {
+        name: provider.firstName,
+        currency: currencyMap[mission.currency],
+        amount: mission.amount,
+        mission_id: mission.id,
+      });
+      sendEmailWithTemplateKey(client.email, "disputeAnswered", {
+        name: client.firstName,
+        currency: currencyMap[mission.currency],
+        amount: mission.amount,
+        mission_id: mission.id,
+        resolution_deadline: dayjs(mission.endDate).format("MMMM DD, YYYY"),
+      });
     }
     return res.status(200).json({
       message: "Dispute updated successfully.",
@@ -131,7 +110,6 @@ router.post(
     if (user?.isAdmin === false) {
       return res.status(403).json({ message: "Forbidden" });
     }
-
     const mission = await Mission.findById(params.missionId).exec();
     if (!mission) {
       return res.status(404).json({ message: "Mission not found" });
@@ -144,37 +122,26 @@ router.post(
     }
     const client = await User.findById(mission.from_user_sub);
     const provider = await User.findById(mission.to_user_sub);
-
-    sendEmailWithTemplate(
-      client.email,
-      "Your Dispute Has Been Reviewed",
-      "./src/templates/dispute-reviewed.html",
-      {
-        name: client.firstName,
-        amount: mission.amount.toFixed(2),
-        currency: currencyMap[mission.currency],
-        email: provider.email,
-        outcome_description:
-          body.action === "refund"
-            ? "Funds have been refunded to your payment method."
-            : "Funds have been released to the provider.",
-      }
-    );
-    sendEmailWithTemplate(
-      provider.email,
-      "Your Dispute Has Been Reviewed",
-      "./src/templates/dispute-reviewed.html",
-      {
-        name: provider.firstName,
-        amount: mission.amount.toFixed(2),
-        currency: currencyMap[mission.currency],
-        email: client.email,
-        outcome_description:
-          body.action === "refund"
-            ? "Funds have been refunded to the client's payment method."
-            : "Funds have been released to you.",
-      }
-    );
+    sendEmailWithTemplateKey(client.email, "disputeReviewed", {
+      name: client.firstName,
+      amount: mission.amount.toFixed(2),
+      currency: currencyMap[mission.currency],
+      email: provider.email,
+      outcome_description:
+        body.action === "refund"
+          ? "Funds have been refunded to your payment method."
+          : "Funds have been released to the provider.",
+    });
+    sendEmailWithTemplateKey(provider.email, "disputeReviewed", {
+      name: provider.firstName,
+      amount: mission.amount.toFixed(2),
+      currency: currencyMap[mission.currency],
+      email: client.email,
+      outcome_description:
+        body.action === "refund"
+          ? "Funds have been refunded to the client's payment method."
+          : "Funds have been released to you.",
+    });
     mission.dispute.status = "completed";
     await mission.save();
     return res.status(200).json({
@@ -207,32 +174,21 @@ router.post("/check-disputes", async (req, res) => {
         const provider = await User.findById(mission.to_user_sub);
         await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
         mission.status = "refund";
-        sendEmailWithTemplate(
-          client.email,
-          "Dispute Deadline Passed",
-          "./src/templates/dispute-closed-no-answer.html",
-          {
-            client_first_name: client.firstName,
-            provider_first_name: provider.firstName,
-            mission_number: mission.id,
-            currency: currencyMap[mission.currency],
-            amount: mission.amount.toFixed(2),
-          }
-        );
-        sendEmailWithTemplate(
-          client.email,
-          "Your Dispute Has Been Reviewed",
-          "./src/templates/dispute-reviewed.html",
-          {
-            name: client.firstName,
-            amount: mission.amount.toFixed(2),
-            currency: currencyMap[mission.currency],
-            email: provider.email,
-            outcome_description:
-              "Funds have been refunded to your payment method due to no response from the provider.",
-          }
-        );
         await mission.save();
+        sendEmailWithTemplateKey(provider.email, "disputeNoAnswer", {
+          client_first_name: provider.firstName,
+          mission_id: mission.id,
+          currency: currencyMap[mission.currency],
+          amount: mission.amount.toFixed(2),
+        });
+        sendEmailWithTemplateKey(client.email, "disputeReviewed", {
+          name: client.firstName,
+          amount: mission.amount.toFixed(2),
+          currency: currencyMap[mission.currency],
+          email: provider.email,
+          outcome_description:
+            "Funds have been refunded to your payment method due to no response from the provider.",
+        });
       }
     }
     res.status(200).json({ message: "Missions completed successfully." });

@@ -7,7 +7,11 @@ import {
   refundToCustomer,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
-import { sendEmailWithTemplate } from "../services/emailServices.js";
+import {
+  getDocumentWithTemplate,
+  sendEmailWithTemplate,
+  sendEmailWithTemplateKey,
+} from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
 import { currencyMap } from "../utils/helpers.js";
 
@@ -70,19 +74,15 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     newMission.paymentLink = link;
     await newMission.save();
     try {
-      sendEmailWithTemplate(
+      sendEmailWithTemplateKey(
         mission.recipient,
-        "You Received A Payment Request",
-        recipientUser?._id
-          ? "./src/templates/payment-request-user.html"
-          : "./src/templates/payment-request-anonymous.html",
+        recipientUser?._id ? "paymentRequestUser" : "paymentRequestAnonymous",
         {
           provider_email: user.email,
           currency: currencyMap[mission.currency],
           amount: parseFloat(mission.amount).toFixed(2),
-          specifications: mission.description,
-          approve_link: `${WEBSITE_URL}/missions`,
-          signup_link: `${WEBSITE_URL}/auth/register?email=${mission.recipient}`,
+          details: mission.description,
+          redirect_link: `${WEBSITE_URL}/missions`,
         }
       );
     } catch (error) {
@@ -114,17 +114,12 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
       const client = await User.findById(mission.from_user_sub);
       const provider = await User.findById(mission.to_user_sub);
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
-      sendEmailWithTemplate(
-        client.email,
-        "Your Mission Request Has Been Cancelled",
-        "./src/templates/mission-cancelled.html",
-        {
-          client_first_name: client.firstName,
-          currency: currencyMap[mission.currency],
-          amount: parseFloat(mission.amount).toFixed(2),
-          provider_email: provider.email,
-        }
-      );
+      sendEmailWithTemplateKey(client.email, "missionCancelled", {
+        name: client.firstName,
+        currency: currencyMap[mission.currency],
+        amount: mission.amount.toFixed(2),
+        provider_email: provider.email,
+      });
     }
     mission.status = "refund";
     await mission.save();
@@ -157,30 +152,21 @@ router.post("/complete-today", async (req, res) => {
       await mission.save();
       const client = await User.findById(mission.from_user_sub);
       const provider = await User.findById(mission.to_user_sub);
-      sendEmailWithTemplate(
-        client.email,
-        "Your Mission Will Be Completed Soon",
-        "./src/templates/mission-completed-client.html",
-        {
-          client_email: mission.recipient,
-          provider_email: provider.email,
-          currency: currencyMap[mission.currency],
-          amount: mission.amount.toFixed(2),
-          dispute_url: `${WEBSITE_URL}/mission/dispute/${mission.id}`,
-        }
-      );
-      sendEmailWithTemplate(
-        provider.email,
-        "Your Mission Will Be Completed Soon",
-        "./src/templates/mission-completed-provider.html",
-        {
-          mission_number: mission.id,
-          provider_first_name: provider.firstName,
-          client_first_name: client.firstName,
-          currency: currencyMap[mission.currency],
-          amount: mission.amount.toFixed(2),
-        }
-      );
+      sendEmailWithTemplateKey(client.email, "missionCompletedClient", {
+        name: client.firstName,
+        provider_email: provider.email,
+        currency: currencyMap[mission.currency],
+        amount: mission.amount.toFixed(2),
+        action_title: "Open a Dispute",
+        action_url: `${WEBSITE_URL}/mission/dispute/${mission.id}`,
+      });
+      sendEmailWithTemplateKey(provider.email, "missionCompletedProvider", {
+        name: provider.firstName,
+        currency: currencyMap[mission.currency],
+        amount: mission.amount.toFixed(2),
+        client_first_name: client.firstName,
+        mission_id: mission.id,
+      });
     }
     res.status(200).json({
       message: `Missions completed successfully`,
@@ -212,20 +198,10 @@ router.post("/clients-reminder", async (req, res) => {
     });
     for (const mission of missions) {
       const client = await User.findById(mission.from_user_sub);
-      const provider = await User.findById(mission.to_user_sub);
-      sendEmailWithTemplate(
-        client.email,
-        "Your Mission Will Be Completed Soon",
-        "./src/templates/mission-reminder.html",
-        {
-          provider_first_name: provider.firstName,
-          mission_number: mission.id,
-          provider_email: provider.email,
-          currency: currencyMap[mission.currency],
-          amount: mission.amount.toFixed(2),
-          dispute_url: `${WEBSITE_URL}/dispute/${mission.id}`,
-        }
-      );
+      sendEmailWithTemplateKey(client.email, "missionReminder", {
+        name: client.firstName,
+        mission_id: mission.id,
+      });
       mission.reminderSent = true;
       await mission.save();
     }
@@ -238,6 +214,14 @@ router.post("/clients-reminder", async (req, res) => {
       error: error.message,
     });
   }
+});
+
+router.post("/test", async (req, res) => {
+  const key = req.body.key;
+  await sendEmailWithTemplateKey("tristan.luong@gmail.com", key, req.body);
+  res.status(200).json({
+    message: `Email sent successfully`,
+  });
 });
 
 export default router;

@@ -56,7 +56,8 @@
       }
       .button {
         text-align: center;
-        margin-top: 20px;
+        margin-top: 32px;
+        margin-bottom: 32px;
       }
       .button a {
         text-decoration: none;
@@ -80,28 +81,19 @@
         <img src="https://iili.io/2ou4X5b.png" alt="BindPay Logo" />
       </div>
       <div class="content">
-        <h1>{title}</h1>
+        <h1>{{ title }}</h1>
         <p>Hi {{ name }},</p>
-        <p>
-          We have received your dispute for the payment of
-          <strong>{{ currency }}{{ amount }}</strong> to
-          <strong>{{ provider_email }}</strong>.
-        </p>
+        <p>{{{ body }}}</p>
+        {{#details}}
         <div class="details">
           <p><strong>{{ detail_title }}</strong></p>
-          <p>
-            1. The provider has 24 hours to respond to the dispute and provide
-            relevant information.
-          </p>
-          <p>
-            2. BindPay will review the dispute and settle it within 12 hours.
-            Depending on the resolution, you will either receive a refund or the
-            payment will be released to the provider.
-          </p>
+          <p>{{{ details }}}</p>
         </div>
+        {{/details}} {{#action_title}}
         <div class="button">
-          <a href="{{ dispute_url }}" target="_blank">View Dispute Details</a>
+          <a href="{{ action_link }}" target="_blank">{{ action_title }}</a>
         </div>
+        {{/action_title}}
         <p>
           If you have any questions or need further assistance, feel free to
           contact us at
@@ -109,10 +101,6 @@
         </p>
         <p>We’re here to help,</p>
         <p>The BindPay Team</p>
-      </div>
-      <div class="footer">
-        <p>This is an automated message; please do not reply.</p>
-        <p>&</p>
       </div>
     </div>
   </body>

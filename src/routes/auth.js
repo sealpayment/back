@@ -8,7 +8,10 @@ import {
   createConnectedAccount,
   linkAccountToConnectedAccount,
 } from "../services/stripeServices.js";
-import { sendEmailWithTemplate } from "../services/emailServices.js";
+import {
+  sendEmailWithTemplate,
+  sendEmailWithTemplateKey,
+} from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 
 const router = express.Router();
@@ -68,16 +71,10 @@ router.post("/sign-up", async (req, res) => {
       user_id: newUser.id,
       user_email: email,
     });
-    sendEmailWithTemplate(
-      newUser.email,
-      "Please confirm your email",
-      "./src/templates/confirm-email.html",
-      {
-        first_name: newUser.firstName,
-        email: newUser.email,
-        verification_link: `${process.env.API_URL}/api/auth/confirm-email?token=${token}`,
-      }
-    );
+    sendEmailWithTemplateKey(newUser.email, "signupConfirmEmail", {
+      name: newUser.firstName,
+      verification_link: `${process.env.API_URL}/api/auth/confirm-email?token=${token}`,
+    });
     return res.status(200).json({
       accessToken: token,
     });
@@ -93,15 +90,10 @@ router.get("/confirm-email", async (req, res) => {
     if (user) {
       user.emailVerified = true;
       await user.save();
-      sendEmailWithTemplate(
-        user.email,
-        "Welcome to Bindpay",
-        "./src/templates/email-verified.html",
-        {
-          first_name: user.firstName,
-          get_started_link: `${process.env.WEBSITE_URL}/mission`,
-        }
-      );
+      sendEmailWithTemplateKey(user.email, "signupSuccess", {
+        name: user.firstName,
+        get_started_link: `${process.env.WEBSITE_URL}/mission`,
+      });
       return res.redirect(`${process.env.WEBSITE_URL}/mission`);
     }
   } catch (error) {
