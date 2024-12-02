@@ -43,19 +43,20 @@ export const sendEmailWithTemplate = async (
 
 export const sendEmailWithTemplateKey = async (recipient, key, variables) => {
   try {
+    if (!recipient) {
+      return;
+    }
     const template = templates[key];
     const file = fs.readFileSync("./src/templates/generic-email.html", "utf8");
-    const body = template.body ? mustache.render(template.body, variables) : "";
-    const detail = template.detail
-      ? mustache.render(template.detail, variables)
-      : "";
+    const renderedTemplate = {};
+    for (const [templateKey, templateValue] of Object.entries(template)) {
+      renderedTemplate[templateKey] = mustache.render(templateValue, variables);
+    }
     const document = mustache.render(file, {
-      ...template,
-      body,
-      detail,
+      ...renderedTemplate,
       ...variables,
     });
-    return sendEmail(recipient, template.subject, document);
+    return sendEmail(recipient, renderedTemplate.subject, document);
   } catch (error) {
     console.log(error);
   }

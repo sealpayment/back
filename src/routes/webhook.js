@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import Mission from "../models/missionModel.js";
 import { createConnectedAccount } from "../services/stripeServices.js";
 import { User } from "../models/userModel.js";
-import { sendEmailWithTemplate } from "../services/emailServices.js";
+import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import { currencyMap } from "../utils/helpers.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -43,62 +43,43 @@ router.post(
         mission.endDate = endDate;
         mission.paymentIntentId = session.payment_intent;
         const isMissionSent = mission.type === "send";
+        const client = await User.findById(mission?.from_user_sub);
+        const provider = await User.findById(mission?.to_user_sub);
         if (isMissionSent) {
-          const sender = await User.findById(mission?.from_user_sub);
-          const client = await User.findById(mission?.to_user_sub);
-          sendEmailWithTemplate(
-            mission.recipient,
-            `You Received a Payment from ${sender?.email}`,
-            "./src/templates/mission-received.html",
-            {
-              recipient_name: client?.firstName,
-              sender_first_name: sender?.firstName,
-              sender_email: sender?.email,
-              currency: currencyMap[mission.currency],
-              amount: mission.amount.toFixed(2),
-              specifications: mission?.description,
-              completed_date: completedDate,
-            }
-          );
-          sendEmailWithTemplate(
-            sender.email,
-            `You Sent a Payment to ${mission.recipient}`,
-            "./src/templates/create-mission-success.html",
-            {
-              client_email: mission.recipient,
-              currency: currencyMap[mission.currency],
-              amount: mission.amount.toFixed(2),
-              specifications: mission.description,
-            }
-          );
+          sendEmailWithTemplateKey(client.email, "missionCreated", {
+            name: client.firstName,
+            mission_id: mission.id,
+            amount: mission.amount,
+            currency: currencyMap[mission.currency],
+            provider_email: mission.recipient,
+            specifications: mission.description,
+          });
+          sendEmailWithTemplateKey(mission.recipient, "missionReceived", {
+            name: provider?.firstName ?? mission.recipient,
+            client_first_name: client.firstName,
+            client_email: client.email,
+            amount: mission.amount,
+            currency: currencyMap[mission.currency],
+            specifications: mission.description,
+            completed_date: completedDate.format("DD/MM/YYYY"),
+          });
         } else {
-          const sender = await User.findById(mission?.from_user_sub);
-          const client = await User.findById(mission?.to_user_sub);
-          sendEmailWithTemplate(
-            sender.email,
-            `You Sent a Payment to ${client.email}`,
-            "./src/templates/create-mission-success.html",
-            {
-              client_email: client.email,
-              currency: currencyMap[mission.currency],
-              amount: mission.amount.toFixed(2),
-              specifications: mission.description,
-            }
-          );
-          sendEmailWithTemplate(
-            client.email,
-            `You Received a Payment from ${sender.email}`,
-            "./src/templates/mission-received.html",
-            {
-              recipient_name: client.firstName,
-              sender_first_name: sender.firstName,
-              sender_email: sender.email,
-              currency: currencyMap[mission.currency],
-              amount: mission.amount.toFixed(2),
-              specifications: mission.description,
-              action_link: `${WEBSITE_URL}/missions`,
-            }
-          );
+          sendEmailWithTemplateKey(client.email, "missionCreated", {
+            name: client.firstName,
+            mission_id: mission.id,
+            amount: mission.amount,
+            currency: currencyMap[mission.currency],
+            provider_email: provider.email,
+            specifications: mission.description,
+          });
+          sendEmailWithTemplateKey(provider.email, "missionReceived", {
+            client_first_name: client.firstName,
+            client_email: client.email,
+            amount: mission.amount,
+            currency: currencyMap[mission.currency],
+            specifications: mission.description,
+            completed_date: completedDate.format("DD/MM/YYYY"),
+          });
         }
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });

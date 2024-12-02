@@ -74,15 +74,17 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     newMission.paymentLink = link;
     await newMission.save();
     try {
+      console.log("link", link);
       sendEmailWithTemplateKey(
         mission.recipient,
         recipientUser?._id ? "paymentRequestUser" : "paymentRequestAnonymous",
         {
+          name: recipientUser?.firstName ?? mission.recipient,
           provider_email: user.email,
           currency: currencyMap[mission.currency],
           amount: parseFloat(mission.amount).toFixed(2),
           details: mission.description,
-          redirect_link: `${WEBSITE_URL}/missions`,
+          action_link: recipientUser?._id ? link : `${WEBSITE_URL}/signup`,
         }
       );
     } catch (error) {

@@ -53,9 +53,9 @@ export default {
       "Before you dive in, we need to confirm your email address to ensure your account is secure and ready to go. " +
       "<p>Once you’ve verified your email, you’ll be ready to:</p>" +
       "<ul>" +
-      "<li>✅ Set up secure, hassle-free transactions.</li>" +
-      "<li>✅ Protect your payments with ease.</li>" +
-      "<li>✅ Enjoy a trusted platform for all your payment needs.</li>" +
+      "<li><p>✅ Set up secure, hassle-free transactions.</p></li>" +
+      "<li><p>✅ Protect your payments with ease.</p></li>" +
+      "<li><p>✅ Enjoy a trusted platform for all your payment needs.</p></li>" +
       "</ul>",
     action_title: "Confirm Email",
     action_link: "{{ verification_link }}",
@@ -90,7 +90,7 @@ export default {
     detail_title: "Mission Details :",
     details: "{{ specifications }}",
     action_title: "Pay Now",
-    action_link: "{{ redirect_link }}",
+    action_link: "{{ action_link }}",
   },
   paymentRequestAnonymous: {
     subject: "You Received A Payment Request",
@@ -105,7 +105,7 @@ export default {
     detail_title: "Mission Details :",
     details: "{{ specifications }}",
     action_title: "Sign Up Now",
-    action_link: "{{ redirect_link }}",
+    action_link: "{{ action_link }}",
   },
   missionCreated: {
     subject: "Your payment is now securely held",
@@ -123,10 +123,8 @@ export default {
     body:
       "Great news! <strong>{{ client_first_name }}</strong> has sent a payment for your  services. The funds are now securely held in BindPay." +
       "<p><strong>What’s Next?</strong></p>" +
-      "<ul>" +
-      "<li>Complete the mission as agreed by the {{ completed_date }} deadline.</li>" +
-      "<li>Ensure your work aligns with the specifications provided.</li>" +
-      "</ul>",
+      "<p>- Complete the mission as agreed by the <strong>{{ completed_date }}</strong> deadline.</p>" +
+      "<p>- Ensure your work aligns with the specifications provided.</p>",
     detail_title: "Mission Details:",
     details:
       "<p><strong>Client:</strong> {{ client_email }}</p>" +
