@@ -70,14 +70,13 @@ router.post(
         currency: currencyMap[mission.currency],
         amount: mission.amount,
         email: provider.email,
-        action_url: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
+        mission_id: mission.id,
       });
       sendEmailWithTemplateKey(provider.email, "disputeOpenedProvider", {
         name: provider.firstName,
         currency: currencyMap[mission.currency],
         amount: mission.amount,
         email: client.email,
-        action_url: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
         mission_id: mission.id,
       });
     }
@@ -87,6 +86,7 @@ router.post(
         currency: currencyMap[mission.currency],
         amount: mission.amount,
         mission_id: mission.id,
+        resolution_deadline: dayjs(mission.endDate).format("MMMM DD, YYYY"),
       });
       sendEmailWithTemplateKey(client.email, "disputeAnswered", {
         name: client.firstName,

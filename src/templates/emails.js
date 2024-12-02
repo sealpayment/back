@@ -1,3 +1,5 @@
+const WEBSITE_URL = process.env.WEBSITE_URL;
+
 export default {
   disputeOpenedClient: {
     subject: "A Dispute Has Been Opened !",
@@ -5,11 +7,11 @@ export default {
     body: "We have received your dispute for the payment of <strong>{{currency}}{{amount}}</strong> to <strong>{{email}}</strong>. We will investigate the issue and get back to you soon.",
     detail_title: "What's Next?",
     details:
-      "1. The provider has 24 hours to respond to the dispute and provide relevant information. <br>" +
-      "2. BindPay will review the dispute and settle it within 12 hours." +
+      "<b>1.</b> The provider has 24 hours to respond to the dispute and provide relevant information. <br>" +
+      "<b>2.</b> BindPay will review the dispute and settle it within 12 hours." +
       "Depending on the resolution, you will either receive a refund or the payment will be released to the provider.",
     action_title: "View Dispute",
-    action_link: "/mission/dispute/{{mission_id}}",
+    action_link: `${WEBSITE_URL}/mission/dispute/{{mission_id}}`,
   },
   disputeOpenedProvider: {
     subject: "Respond to the Dispute Within 24 Hours",
@@ -17,10 +19,10 @@ export default {
     body: "Oops! <strong>{{ email }}</strong> has reported that the <strong>mission #{{ mission_id }}</strong> was not completed as agreed.",
     detail_title: "What should you do now?",
     details:
-      "1. You have <strong>24 hours</strong> to respond to their objections.<br>" +
-      "2. Provide evidence to support your case using the button below.",
+      "<b>1.</b> You have <strong>24 hours</strong> to respond to their objections.<br>" +
+      "<b>2.</b> Provide evidence to support your case using the button below.",
     action_title: "Respond to the Dispute",
-    action_link: "{{ dispute_url }}",
+    action_link: `${WEBSITE_URL}/mission/dispute/{{mission_id}}`,
   },
   disputeAnswered: {
     subject: "Our Team Is Reviewing Your Submission !",
@@ -93,7 +95,7 @@ export default {
     action_link: "{{ action_link }}",
   },
   paymentRequestAnonymous: {
-    subject: "You Received A Payment Request",
+    subject: "{{ provider_email } Requests Payment via BindPay",
     title: "You Received A Payment Request",
     body:
       "You have received a payment request for <strong>{{ currency }}{{ amount }}</strong> from <strong>{{ provider_email }}</strong> " +
@@ -104,7 +106,7 @@ export default {
       "</p>",
     detail_title: "Mission Details :",
     details: "{{ specifications }}",
-    action_title: "Sign Up Now",
+    action_title: "Sign Up And Pay",
     action_link: "{{ action_link }}",
   },
   missionCreated: {
@@ -116,6 +118,8 @@ export default {
       "<p><strong>Provider:</strong> {{ provider_email }}</p>" +
       "<p><strong>Amount:</strong> {{ currency }}{{ amount }}</p>" +
       "<p><strong>Specifications: </strong>{{specifications}}</p>",
+    action_title: "Send Another Payment",
+    action_link: "https://bindpay.app/mission",
   },
   missionReceived: {
     subject: "Your Received A Payment",
