@@ -39,6 +39,8 @@ export default {
     body: "The dispute for your payment of <strong>{{ currency }}{{ amount }}</strong> with <strong>{{ email }}</strong> has been resolved.",
     detail_title: "Outcome",
     details: "{{ outcome_description }}",
+    action_title: "Access Your Dashboard",
+    action_link: `${WEBSITE_URL}/mission`,
   },
   disputeNoAnswer: {
     subject: "Dispute Deadline Passed",
@@ -95,15 +97,12 @@ export default {
     action_link: "{{ action_link }}",
   },
   paymentRequestAnonymous: {
-    subject: "{{ provider_email } Requests Payment via BindPay",
+    subject: "You Received A Payment Request",
     title: "You Received A Payment Request",
     body:
       "You have received a payment request for <strong>{{ currency }}{{ amount }}</strong> from <strong>{{ provider_email }}</strong> " +
       "<p><strong>What’s BindPay?</strong></p>" +
-      "<p>" +
-      "BindPay is a secure payment platform that holds funds until the job is " +
-      "completed as agreed, protecting both you and your provider." +
-      "</p>",
+      "<p> BindPay is a secure payment platform that holds funds until the job is completed as agreed, protecting both you and your provider.</p>",
     detail_title: "Mission Details :",
     details: "{{ specifications }}",
     action_title: "Sign Up And Pay",
@@ -146,30 +145,22 @@ export default {
       "<p><strong>Reason:</strong> Mission Cancelled</p>",
   },
   missionCompletedClient: {
-    subject: "Your Mission Has Been Completed",
-    title: "Funds Will Be Released Soon – Review Now",
+    subject: "{{ provider_email }}’s mission has ended - Review Now",
+    title: "Funds Will Be Released Soon",
     body: "<strong>{{ provider_email }}</strong>’s mission has ended, and the funds of <strong>{{ currency }}{{ amount }}</strong> are scheduled to be released in <strong>12 hours</strong>.",
     detail_title: "What you can do :",
     details:
-      "<ul>" +
-      "<li> If you’re satisfied with the work, no action is needed.</li>" +
-      "<li>If there’s an issue, open a dispute before the release deadline.</li>" +
-      "</ul>",
+      "<p>- If you’re satisfied with the work, no action is needed.</p>" +
+      "<p>- If there’s an issue, open a dispute before the release deadline.</p>",
   },
   missionCompletedProvider: {
     subject: "Your Customer Has 12 Hours to Reviewed",
     title: "Your Customer Has 12 Hours to Review",
-    body: " Congratulations on completing the <strong>mission #{{ mission_id }}</strong>. The 5-day hold period has ended. <strong>{{ client_first_name }}</strong> now has <strong>12 hours</strong> to review the results.",
+    body: "Congratulations on completing the <strong>mission #{{ mission_id }}</strong>. The 5-day hold period has ended. <strong>{{ client_first_name }}</strong> now has <strong>12 hours</strong> to review the results.",
     detail_title: "Next steps :",
     details:
-      "<ul>" +
-      "<li>" +
-      "If <strong>{{ client_first_name }}</strong> is satisfied, the " +
-      "funds of <strong>{{ currency }}{{ amount }}</strong> will be " +
-      "released to your account." +
-      "</li>" +
-      "<li>If they raise an issue, you’ll be notified immediately.</li>" +
-      "</ul>",
+      "<p>- If <strong>{{ client_first_name }}</strong> is satisfied, the funds of <strong>{{ currency }}{{ amount }}</strong> will be released to your account.</p>" +
+      "<p>- If they raise an issue, you’ll be notified immediately.</p>",
   },
   missionReminder: {
     subject: "Your Mission Will Be Completed Soon",

@@ -55,7 +55,7 @@ router.post(
       return res.status(500).json({ message: "Error while uploading file" });
     }
     mission.dispute.messages.push({
-      from_user_sub: user.sub,
+      from_user_sub: user._id,
       message: body.message,
       file: handledFile,
     });

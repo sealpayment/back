@@ -1,8 +1,10 @@
 import nodemailer from "nodemailer";
 import mustache from "mustache";
 import fs from "fs";
+import path from "path";
 
 import templates from "../templates/emails.js";
+import { signedS3Url } from "../utils/aws.js";
 
 export const sendEmail = async (email, subject, html) => {
   const transporter = nodemailer.createTransport({
@@ -46,6 +48,10 @@ export const sendEmailWithTemplateKey = async (recipient, key, variables) => {
     if (!recipient) {
       return;
     }
+    const logoUrl = await signedS3Url(
+      "ilmlak-public",
+      "s3://ilmlak-public/BindPay1.png"
+    );
     const template = templates[key];
     const file = fs.readFileSync("./src/templates/generic-email.html", "utf8");
     const renderedTemplate = {};
@@ -55,6 +61,7 @@ export const sendEmailWithTemplateKey = async (recipient, key, variables) => {
     const document = mustache.render(file, {
       ...renderedTemplate,
       ...variables,
+      logo: logoUrl,
     });
     return sendEmail(recipient, renderedTemplate.subject, document);
   } catch (error) {
