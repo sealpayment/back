@@ -4,21 +4,20 @@ import fs from "fs";
 import path from "path";
 
 import templates from "../templates/emails.js";
-import { signedS3Url } from "../utils/aws.js";
 
 export const sendEmail = async (email, subject, html) => {
   const transporter = nodemailer.createTransport({
-    host: "mail.privateemail.com",
+    host: "smtp.gmail.com",
     port: 465,
     secure: true,
     auth: {
-      user: "notification@ariane.guide",
-      pass: "@Ariane!210123",
+      user: process.env.SMTP_EMAIL,
+      pass: process.env.SMTP_PASSWORD,
     },
   });
 
   const emailSent = await transporter.sendMail({
-    from: "Bindpay <notification@ariane.guide>",
+    from: `Bindpay <${process.env.SMTP_EMAIL}>`,
     to: email,
     subject: subject,
     html: html,
@@ -26,32 +25,11 @@ export const sendEmail = async (email, subject, html) => {
   return emailSent;
 };
 
-export const sendEmailWithTemplate = async (
-  recipient,
-  subject,
-  template,
-  variables
-) => {
-  try {
-    const file = fs.readFileSync(template, "utf8");
-    const document = mustache.render(file, {
-      ...variables,
-    });
-    return sendEmail(recipient, subject, document);
-  } catch (error) {
-    console.log(error);
-  }
-};
-
 export const sendEmailWithTemplateKey = async (recipient, key, variables) => {
   try {
     if (!recipient) {
       return;
     }
-    const logoUrl = await signedS3Url(
-      "ilmlak-public",
-      "s3://ilmlak-public/BindPay1.png"
-    );
     const template = templates[key];
     const file = fs.readFileSync("./src/templates/generic-email.html", "utf8");
     const renderedTemplate = {};
@@ -61,28 +39,9 @@ export const sendEmailWithTemplateKey = async (recipient, key, variables) => {
     const document = mustache.render(file, {
       ...renderedTemplate,
       ...variables,
-      logo: logoUrl,
+      logo: `${process.env.API_URL}/images/logo.png`,
     });
     return sendEmail(recipient, renderedTemplate.subject, document);
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export const getDocumentWithTemplate = async (key, variables) => {
-  try {
-    const template = templates[key];
-    const file = fs.readFileSync("./src/templates/generic-email.html", "utf8");
-    const body = template.body ? mustache.render(template.body, variables) : "";
-    const details = template.details
-      ? mustache.render(template.details, variables)
-      : "";
-    return mustache.render(file, {
-      ...template,
-      body,
-      details,
-      ...variables,
-    });
   } catch (error) {
     console.log(error);
   }

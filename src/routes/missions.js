@@ -7,11 +7,7 @@ import {
   refundToCustomer,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
-import {
-  getDocumentWithTemplate,
-  sendEmailWithTemplate,
-  sendEmailWithTemplateKey,
-} from "../services/emailServices.js";
+import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
 import { currencyMap } from "../utils/helpers.js";
 

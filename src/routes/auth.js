@@ -8,10 +8,7 @@ import {
   createConnectedAccount,
   linkAccountToConnectedAccount,
 } from "../services/stripeServices.js";
-import {
-  sendEmailWithTemplate,
-  sendEmailWithTemplateKey,
-} from "../services/emailServices.js";
+import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 
 const router = express.Router();
