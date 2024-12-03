@@ -41,7 +41,23 @@ app.use(
   })
 );
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    setHeaders: (res, path) => {
+      res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache long
+      res.setHeader("Content-Type", "image/jpeg", "image/png", "image/jpg");
+      res.setHeader(
+        "Strict-Transport-Security",
+        "max-age=63072000; includeSubDomains; preload"
+      );
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; img-src 'self'"
+      );
+    },
+  })
+);
 
 app.use("/api/auth", AuthRouter);
 app.use("/api/missions", MissionsRouter);
