@@ -8,6 +8,11 @@ export async function createStripePaymentLink(mission, toUser) {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
+      payment_method_options: {
+        card: {
+          request_three_d_secure: "any",
+        },
+      },
       line_items: [
         {
           price_data: {
