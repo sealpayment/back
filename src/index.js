@@ -77,6 +77,15 @@ cron.schedule("0 * * * *", async () => {
 cron.schedule("0 * * * *", async () => {
   console.log("Running cron job", new Date());
   try {
+    await axios.post(`${process.env.API_URL}/api/missions/check-completed`);
+  } catch (error) {
+    console.log("Error while completing and paying missions", error);
+  }
+});
+
+cron.schedule("0 * * * *", async () => {
+  console.log("Running cron job", new Date());
+  try {
     await axios.post(`${process.env.API_URL}/api/missions/clients-reminder`);
   } catch (error) {
     console.log("Error while completing and paying missions", error);

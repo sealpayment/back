@@ -80,7 +80,9 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
           currency: currencyMap[mission.currency],
           amount: parseFloat(mission.amount).toFixed(2),
           details: mission.description,
-          action_link: recipientUser?._id ? link : `${WEBSITE_URL}/signup`,
+          action_link: recipientUser?._id
+            ? link
+            : `${WEBSITE_URL}/auth/register`,
         }
       );
     } catch (error) {

@@ -83,7 +83,7 @@ export default {
       "<li>✅ Build trust between both parties with our easy-to-use platform.</li>" +
       "</ul>",
     action_title: "Get Started Now",
-    action_link: "{{ get_started_link }}",
+    action_link: `${WEBSITE_URL}/mission`,
   },
   paymentRequestUser: {
     subject: "You Received A Payment Request",
@@ -118,13 +118,13 @@ export default {
       "<p><strong>Amount:</strong> {{ currency }}{{ amount }}</p>" +
       "<p><strong>Specifications: </strong>{{specifications}}</p>",
     action_title: "Send Another Payment",
-    action_link: "https://bindpay.app/mission",
+    action_link: `${WEBSITE_URL}/mission`,
   },
   missionReceived: {
     subject: "Your Received A Payment",
-    title: "You Received A Payment",
+    title: "Your Payment Is Securely Held",
     body:
-      "Great news! <strong>{{ client_first_name }}</strong> has sent a payment for your  services. The funds are now securely held in BindPay." +
+      "Great news! <strong>{{ client_first_name }}</strong> has sent a payment of {{currency}}{{amount}}. The funds are now securely held in BindPay.</p>" +
       "<p><strong>What’s Next?</strong></p>" +
       "<p>- Complete the mission as agreed by the <strong>{{ completed_date }}</strong> deadline.</p>" +
       "<p>- Ensure your work aligns with the specifications provided.</p>",
@@ -133,6 +133,42 @@ export default {
       "<p><strong>Client:</strong> {{ client_email }}</p>" +
       "<p><strong>Amount:</strong> {{ currency }}{{ amount }}</p>" +
       "<p><strong>Specifications: </strong>{{specifications}}</p>",
+    action_title: "Open BindPay Dashboard",
+    action_link: `${WEBSITE_URL}/mission`,
+  },
+  missionReceivedUser: {
+    subject: "Your Received A Payment",
+    title: "Your Payment Is Securely Held",
+    body:
+      "Great news! <strong>{{ client_first_name }}</strong> has sent a payment of {{currency}}{{amount}}. The funds are now securely held in BindPay.</p>" +
+      "<p><strong>What’s Next?</strong></p>" +
+      "<p>- Complete the mission as agreed by the <strong>{{ completed_date }}</strong> deadline.</p>" +
+      "<p>- Ensure your work aligns with the specifications provided.</p>",
+    detail_title: "Mission Details:",
+    details:
+      "<p><strong>Client:</strong> {{ client_email }}</p>" +
+      "<p><strong>Amount:</strong> {{ currency }}{{ amount }}</p>" +
+      "<p><strong>Specifications: </strong>{{specifications}}</p>",
+    action_title: "Open BindPay Dashboard",
+    action_link: `${WEBSITE_URL}/mission`,
+  },
+  missionReceivedAnonymous: {
+    subject:
+      "You’ve Received a Payment – Create Your Account to Transfer Your Funds",
+    title: "Your Payment Is Securely Held",
+    body:
+      "Good news! <strong>{{ client_first_name }}</strong> has sent a payment of <strong>{{ currency }}{{ amount }}</strong>.<br>" +
+      "<p>The funds are securely held by BindPay and will be released once you complete the mission as agreed.</p><br>" +
+      "<p><strong>What’s Next?</strong></p>" +
+      "<strong><p>- Create your BindPay account</p></strong>" +
+      "<p>- Complete the mission by <strong>{{ completed_date }}</strong> while ensuring it aligns with the agreed specifications.</p>",
+    detail_title: "Mission Details:",
+    details:
+      "<p><strong>Client:</strong> {{ client_email }}</p>" +
+      "<p><strong>Amount:</strong> {{ currency }}{{ amount }}</p>" +
+      "<p><strong>Specifications: </strong>{{ specifications }}</p>",
+    action_title: "Create my account",
+    action_link: `${WEBSITE_URL}/auth/register`,
   },
   missionCancelled: {
     subject: "Your Mission Has Been Cancelled",
@@ -154,9 +190,11 @@ export default {
       "<p>- If there’s an issue, open a dispute before the release deadline.</p>",
   },
   missionCompletedProvider: {
-    subject: "Your Customer Has 12 Hours to Reviewed",
-    title: "Your Customer Has 12 Hours to Review",
-    body: "Congratulations on completing the <strong>mission #{{ mission_id }}</strong>. The 5-day hold period has ended. <strong>{{ client_first_name }}</strong> now has <strong>12 hours</strong> to review the results.",
+    subject: "Mission Completed – Funds Will Be Released Soon",
+    title: "Your Mission Has Ended",
+    body:
+      "<p>Congratulations on completing your <strong>mission #{{ mission_id }}</strong>. The funds are being processed and will be delivered to your bank account within 7 days.</p>" +
+      "<p>Thank you for your excellent work and for using BindPay to secure your payments.</p>",
     detail_title: "Next steps :",
     details:
       "<p>- If <strong>{{ client_first_name }}</strong> is satisfied, the funds of <strong>{{ currency }}{{ amount }}</strong> will be released to your account.</p>" +

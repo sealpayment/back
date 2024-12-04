@@ -89,7 +89,6 @@ router.get("/confirm-email", async (req, res) => {
       await user.save();
       sendEmailWithTemplateKey(user.email, "signupSuccess", {
         name: user.firstName,
-        get_started_link: `${process.env.WEBSITE_URL}/mission`,
       });
       return res.redirect(`${process.env.WEBSITE_URL}/mission`);
     }

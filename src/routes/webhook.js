@@ -54,15 +54,34 @@ router.post(
             provider_email: mission.recipient,
             specifications: mission.description,
           });
-          sendEmailWithTemplateKey(mission.recipient, "missionReceived", {
-            name: provider?.firstName ?? mission.recipient,
-            client_first_name: client.firstName,
-            client_email: client.email,
-            amount: mission.amount,
-            currency: currencyMap[mission.currency],
-            specifications: mission.description,
-            completed_date: completedDate.format("DD/MM/YYYY"),
-          });
+          if (provider) {
+            sendEmailWithTemplateKey(provider.email, "missionReceivedUser", {
+              client_first_name: client.firstName,
+              client_email: client.email,
+              amount: mission.amount,
+              currency: currencyMap[mission.currency],
+              specifications: mission.description,
+              completed_date: completedDate.format("DD/MM/YYYY"),
+            });
+          } else {
+            console.log(
+              "sending email to anonymous recipient",
+              mission.recipient
+            );
+            sendEmailWithTemplateKey(
+              mission.recipient,
+              "missionReceivedAnonymous",
+              {
+                name: mission.recipient,
+                client_first_name: client.firstName,
+                client_email: client.email,
+                amount: mission.amount,
+                currency: currencyMap[mission.currency],
+                specifications: mission.description,
+                completed_date: completedDate.format("DD/MM/YYYY"),
+              }
+            );
+          }
         } else {
           sendEmailWithTemplateKey(client.email, "missionCreated", {
             name: client.firstName,
