@@ -45,6 +45,7 @@ router.post("/sign-up", async (req, res) => {
   try {
     const bytes = CryptoJS.AES.decrypt(password, PUBLIC_AUTH_KEY);
     decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
+    console.log("decryptedPassword", decryptedPassword);
   } catch (error) {
     return res
       .status(400)
@@ -81,6 +82,9 @@ router.post("/sign-up", async (req, res) => {
     const token = generateAccessToken({
       user_id: newUser.id,
       user_email: email,
+    });
+    sendEmailWithTemplateKey(newUser.email, "signupSuccess", {
+      name: newUser.firstName,
     });
     // sendEmailWithTemplateKey(newUser.email, "signupConfirmEmail", {
     //   name: newUser.firstName,

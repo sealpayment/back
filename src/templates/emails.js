@@ -56,13 +56,9 @@ export default {
     body:
       "Before you dive in, we need to confirm your email address to ensure your account is secure and ready to go. " +
       "<p>Once you’ve verified your email, you’ll be ready to:</p>" +
-      "<ul>" +
-      "<li><p>✅ Set up secure, hassle-free transactions.</p></li>" +
-      "<li><p>✅ Protect your payments with ease.</p></li>" +
-      "<li><p>✅ Enjoy a trusted platform for all your payment needs.</p></li>" +
-      "</ul>",
-    action_title: "Confirm Email",
-    action_link: "{{ action_link }}",
+      "<p>✅ Set up secure, hassle-free transactions.</p>" +
+      "<p>✅ Protect your payments with ease.</p>" +
+      "<p>✅ Enjoy a trusted platform for all your payment needs.</p>",
   },
   signupSuccess: {
     subject: "Welcome to BindPay!",
