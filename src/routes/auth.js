@@ -17,8 +17,15 @@ const { PUBLIC_AUTH_KEY } = process.env;
 
 router.post("/sign-in", async (req, res) => {
   const { email, password } = req.body;
-  const bytes = CryptoJS.AES.decrypt(password, PUBLIC_AUTH_KEY);
-  const decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
+  let decryptedPassword;
+  try {
+    const bytes = CryptoJS.AES.decrypt(password, PUBLIC_AUTH_KEY);
+    decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ message: "Erreur de décryptage du mot de passe" });
+  }
   const user = await User.findOne({ email });
   if (user && bcrypt.compareSync(decryptedPassword, user.password)) {
     const token = generateAccessToken({
@@ -34,8 +41,15 @@ router.post("/sign-in", async (req, res) => {
 
 router.post("/sign-up", async (req, res) => {
   const { email, password } = req.body;
-  const bytes = CryptoJS.AES.decrypt(password, PUBLIC_AUTH_KEY);
-  const decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
+  let decryptedPassword;
+  try {
+    const bytes = CryptoJS.AES.decrypt(password, PUBLIC_AUTH_KEY);
+    decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ message: "Erreur de décryptage du mot de passe" });
+  }
   const user = await User.findOne({ email });
   if (!user) {
     const salt = bcrypt.genSaltSync(10);
@@ -68,10 +82,10 @@ router.post("/sign-up", async (req, res) => {
       user_id: newUser.id,
       user_email: email,
     });
-    sendEmailWithTemplateKey(newUser.email, "signupConfirmEmail", {
-      name: newUser.firstName,
-      verification_link: `${process.env.API_URL}/api/auth/confirm-email?token=${token}`,
-    });
+    // sendEmailWithTemplateKey(newUser.email, "signupConfirmEmail", {
+    //   name: newUser.firstName,
+    //   action_link: `${process.env.API_URL}/api/auth/confirm-email?token=${token}`,
+    // });
     return res.status(200).json({
       accessToken: token,
     });

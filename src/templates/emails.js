@@ -62,7 +62,7 @@ export default {
       "<li><p>✅ Enjoy a trusted platform for all your payment needs.</p></li>" +
       "</ul>",
     action_title: "Confirm Email",
-    action_link: "{{ verification_link }}",
+    action_link: "{{ action_link }}",
   },
   signupSuccess: {
     subject: "Welcome to BindPay!",
