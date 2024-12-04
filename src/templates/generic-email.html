@@ -18,6 +18,7 @@
         padding: 20px;
         border: 1px solid #ddd;
         border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
       .header {
         text-align: center;
@@ -63,30 +64,37 @@
         text-decoration: none;
         color: #fff;
         background-color: #1c92f4;
-        padding: 10px 20px;
+        padding: 12px 24px;
         border-radius: 5px;
         font-size: 16px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .button a:hover {
+        background-color: #157bcf;
       }
       .name {
         font-size: 16px;
         color: #333;
+        margin-top: 20px;
       }
       .footer {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: center;
         margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        text-align: center;
         font-size: 12px;
         color: #777;
-        align-items: center;
+        line-height: 1.6;
       }
-      .unsubscribe {
-        font-size: 12px;
-        color: #777;
+      .footer p {
+        margin: 5px 0;
       }
-      p {
-        margin: 5px;
+      .footer a {
+        color: #999;
+        text-decoration: none;
+      }
+      .footer a:hover {
+        color: #666;
       }
     </style>
   </head>
@@ -98,7 +106,7 @@
       <div class="content">
         <h1>{{ title }}</h1>
         <p>Hi <strong>{{ name }}</strong>,</p>
-        <p>{{{ body }}}</p>
+        <p>{{{ body }}}</p>
         {{#details}}
         <div class="details">
           <p><strong>{{ detail_title }}</strong></p>
@@ -117,16 +125,16 @@
           contact us at
           <a href="mailto:support@bindpay.app">support@bindpay.app</a>.
         </p>
-        <p>We’re here to help !</p>
+        <p>We’re here to help!</p>
         <strong>
           <p class="name">The BindPay Team</p>
         </strong>
       </div>
       <div class="footer">
-        <p>© 2024 Bindpay. All rights reserved.</p>
+        <p>© 2024 BindPay. All rights reserved.</p>
         <p>6 rue de la grange aux Belles, 75010 Paris</p>
         <p>
-          <a href="http://bindpay.app" style="color: #999">Unsubscribe</a>
+          <a href="http://bindpay.app">Unsubscribe</a>
         </p>
       </div>
     </div>
