@@ -44,6 +44,7 @@ const MissionSchema = new Schema({
     ],
     default: "draft",
   },
+  expressMode: { type: Boolean, default: false },
   reminderSent: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });

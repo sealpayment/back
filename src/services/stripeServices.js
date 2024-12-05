@@ -317,9 +317,14 @@ export async function getConnectedAccountBalance(connectedAccountId) {
 
 export async function capturePaymentIntent(paymentIntentId) {
   try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (paymentIntent.status === "succeeded") {
+      console.log("Payment intent already captured");
+      return;
+    }
     await stripe.paymentIntents.capture(paymentIntentId);
   } catch (error) {
     console.error(error);
-    throw new Error("Error while capturing payment intent");
+    throw new Error("Error while capturing payment intent" + error.message);
   }
 }
