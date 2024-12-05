@@ -173,21 +173,25 @@ router.post("/should-complete", async (req, res) => {
       await mission.save();
       const client = await User.findById(mission?.from_user_sub);
       const provider = await User.findById(mission?.to_user_sub);
-      sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
-        name: client?.firstName,
-        provider_email: provider?.email,
-        currency: currencyMap[mission.currency],
-        amount: mission.amount.toFixed(2),
-        action_title: "Open a Dispute",
-        action_url: `${WEBSITE_URL}/mission/dispute/${mission.id}`,
-      });
-      sendEmailWithTemplateKey(provider?.email, "missionCompletedProvider", {
-        name: provider?.firstName,
-        currency: currencyMap[mission.currency],
-        amount: mission.amount.toFixed(2),
-        client_first_name: client?.firstName,
-        mission_id: mission.id,
-      });
+      if (client.email) {
+        sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
+          name: client?.firstName,
+          provider_email: provider?.email,
+          currency: currencyMap[mission.currency],
+          amount: mission.amount.toFixed(2),
+          action_title: "Open a Dispute",
+          action_url: `${WEBSITE_URL}/mission/dispute/${mission.id}`,
+        });
+      }
+      if (provider.email) {
+        sendEmailWithTemplateKey(provider?.email, "missionCompletedProvider", {
+          name: provider?.firstName,
+          currency: currencyMap[mission.currency],
+          amount: mission.amount.toFixed(2),
+          client_first_name: client?.firstName,
+          mission_id: mission.id,
+        });
+      }
     }
     res.status(200).json({
       message: `Missions completed successfully`,
