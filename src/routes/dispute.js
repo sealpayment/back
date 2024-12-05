@@ -3,7 +3,10 @@ import express from "express";
 import { multerUpload, checkJwt } from "../middlewares/middleware.js";
 import Mission from "../models/missionModel.js";
 
-import { refundToCustomer } from "../services/stripeServices.js";
+import {
+  capturePaymentIntent,
+  refundToCustomer,
+} from "../services/stripeServices.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 
 import { currencyMap, handleUploadedFile } from "../utils/helpers.js";
@@ -115,9 +118,10 @@ router.post(
       return res.status(404).json({ message: "Mission not found" });
     }
     if (body.action === "refund") {
-      await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
+      await refundToCustomer(mission.paymentIntentId);
       mission.status = "refund";
     } else {
+      await capturePaymentIntent(mission.paymentIntentId);
       mission.status = "paid";
     }
     const client = await User.findById(mission.from_user_sub);
@@ -149,47 +153,5 @@ router.post(
     });
   }
 );
-
-router.post("/check-disputes", async (req, res) => {
-  const now = dayjs();
-  try {
-    const allMissions = await Mission.find({ status: "completed" });
-    const missions = allMissions.filter((mission) => {
-      const endDate = dayjs(mission.endDate);
-      return endDate.diff(now, "hour") > 36;
-    });
-    for (const mission of missions) {
-      const providerHasResponded = mission.dispute.messages.some(
-        (message) => message.from_user_sub === mission.to_user_sub
-      );
-      if (!providerHasResponded) {
-        const client = await User.findById(mission.from_user_sub);
-        const provider = await User.findById(mission.to_user_sub);
-        await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
-        mission.status = "refund";
-        await mission.save();
-        sendEmailWithTemplateKey(provider.email, "disputeNoAnswer", {
-          client_first_name: provider.firstName,
-          mission_id: mission.id,
-          currency: currencyMap[mission.currency],
-          amount: mission.amount.toFixed(2),
-        });
-        sendEmailWithTemplateKey(client.email, "disputeReviewed", {
-          name: client.firstName,
-          amount: mission.amount.toFixed(2),
-          currency: currencyMap[mission.currency],
-          email: provider.email,
-          outcome_description:
-            "Funds have been refunded to your payment method due to no response from the provider.",
-        });
-      }
-    }
-    res.status(200).json({ message: "Missions completed successfully." });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error while completing the missions.", error: err });
-  }
-});
 
 export default router;

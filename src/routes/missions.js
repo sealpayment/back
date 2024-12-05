@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 
 import { checkJwt } from "../utils/auth.js";
 import {
+  capturePaymentIntent,
   createStripePaymentLink,
   refundToCustomer,
 } from "../services/stripeServices.js";
@@ -10,7 +11,6 @@ import Mission from "../models/missionModel.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
 import { currencyMap } from "../utils/helpers.js";
-import { t } from "i18next";
 
 const WEBSITE_URL = process.env.WEBSITE_URL;
 
@@ -20,7 +20,7 @@ router.get("/", checkJwt, async ({ user }, res) => {
   const missions = await Mission.find({
     $or: [{ from_user_sub: user?._id }, { to_user_sub: user?._id }],
   })
-    .sort({ endDate: -1 })
+    .sort({ endDate: 1 })
     .exec();
   return res.json(missions);
 });
@@ -129,89 +129,6 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
       .status(500)
       .json({ message: "Erreur while cancelling the mission.", error: err });
   }
-});
-
-router.post("/should-remind", async (req, res) => {
-  const now = dayjs();
-  try {
-    const allMissions = await Mission.find({ status: "active" });
-    const missions = allMissions.filter((mission) => {
-      const endDate = dayjs(mission.endDate);
-      const diff = endDate.diff(now, "hour");
-      return diff > 96 && diff < 120 && !mission.reminderSent;
-    });
-    for (const mission of missions) {
-      const client = await User.findById(mission.from_user_sub);
-      sendEmailWithTemplateKey(client.email, "missionReminder", {
-        name: client.firstName,
-        mission_id: mission.id,
-      });
-      mission.reminderSent = true;
-      await mission.save();
-    }
-    res.status(200).json({
-      message: `Missions completed successfully`,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Erreur lors de la mise à jour des missions.",
-      error: error.message,
-    });
-  }
-});
-
-router.post("/should-complete", async (req, res) => {
-  const now = dayjs();
-  try {
-    const allMissions = await Mission.find({ status: "active" });
-    const missions = allMissions.filter((mission) => {
-      const endDate = dayjs(mission.endDate);
-      return endDate.diff(now, "hour") < 48;
-    });
-    for (const mission of missions) {
-      mission.status = "completed";
-      await mission.save();
-      const client = await User.findById(mission?.from_user_sub);
-      const provider = await User.findById(mission?.to_user_sub);
-      if (client.email) {
-        sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
-          name: client?.firstName,
-          provider_email: provider?.email,
-          currency: currencyMap[mission.currency],
-          amount: mission.amount.toFixed(2),
-          action_title: "Open a Dispute",
-          action_url: `${WEBSITE_URL}/mission/dispute/${mission.id}`,
-        });
-      }
-      if (provider.email) {
-        sendEmailWithTemplateKey(provider?.email, "missionCompletedProvider", {
-          name: provider?.firstName,
-          currency: currencyMap[mission.currency],
-          amount: mission.amount.toFixed(2),
-          client_first_name: client?.firstName,
-          mission_id: mission.id,
-        });
-      }
-    }
-    res.status(200).json({
-      message: `Missions completed successfully`,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Erreur lors de la mise à jour des missions.",
-      error: error.message,
-    });
-  }
-});
-
-router.post("/test", async (req, res) => {
-  const now = dayjs();
-  const allMissions = await Mission.find({ status: "active" });
-  const shouldBecompletedMissions = allMissions.filter((mission) => {
-    const endDate = dayjs(mission.endDate);
-    return endDate.diff(now, "hour") < 48;
-  });
-  res.status(200).json(shouldBecompletedMissions);
 });
 
 export default router;

@@ -31,6 +31,7 @@ export async function createStripePaymentLink(mission, toUser) {
       cancel_url: `${WEBSITE_URL}/mission`,
       metadata: { missionId: mission.id },
       payment_intent_data: {
+        capture_method: "manual",
         transfer_data: {
           destination: toUser?.connected_account_id,
         },
@@ -115,6 +116,7 @@ export async function createConnectedAccount(userData) {
     return connectedAccount;
   } catch (error) {
     console.log(error);
+    throw new Error(error.message);
   }
 }
 
@@ -251,27 +253,9 @@ export async function transferFromConnectedAccount(connectedAccountId, amount) {
   }
 }
 
-export async function refundToCustomer(paymentIntentId, amount) {
+export async function refundToCustomer(paymentIntentId) {
   try {
-    const paymentIntent = await stripe.paymentIntents.retrieve(
-      paymentIntentId,
-      {
-        expand: ["charges.data.transfer"],
-      }
-    );
-    const charge = await stripe.charges.retrieve(paymentIntent.latest_charge, {
-      expand: ["transfer"],
-    });
-    if (charge.transfer) {
-      const transferId = charge?.transfer?.id;
-      await stripe.transfers.createReversal(transferId, {
-        amount: amount,
-      });
-    }
-    await stripe.refunds.create({
-      payment_intent: paymentIntentId,
-    });
-    return charge;
+    await stripe.paymentIntents.cancel(paymentIntentId);
   } catch (error) {
     console.error(error);
     throw new Error(
@@ -328,5 +312,14 @@ export async function getConnectedAccountBalance(connectedAccountId) {
       "Erreur lors de la récupération de la balance et des payouts : " +
         error.message
     );
+  }
+}
+
+export async function capturePaymentIntent(paymentIntentId) {
+  try {
+    await stripe.paymentIntents.capture(paymentIntentId);
+  } catch (error) {
+    console.error(error);
+    throw new Error("Error while capturing payment intent");
   }
 }

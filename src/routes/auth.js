@@ -54,12 +54,18 @@ router.post("/sign-up", async (req, res) => {
   if (!user) {
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
-    const connectedAccount = await createConnectedAccount(req.body);
-    if (req.body.bankAccountToken)
+    let connectedAccount;
+    try {
+      connectedAccount = await createConnectedAccount(req.body);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+    if (req.body.bankAccountToken) {
       await linkAccountToConnectedAccount(
         req.body.bankAccountToken,
         connectedAccount.id
       );
+    }
     const newUser = new User({
       ...req.body,
       password: passwordHash,
@@ -93,7 +99,7 @@ router.post("/sign-up", async (req, res) => {
       accessToken: token,
     });
   }
-  res.status(400).json({ message: "User already exists" });
+  res.status(400).json({ message: "This email is already used" });
 });
 
 router.get("/confirm-email", async (req, res) => {

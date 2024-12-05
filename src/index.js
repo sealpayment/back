@@ -14,6 +14,7 @@ import StripeRouter from "./routes/stripe.js";
 import UserRouter from "./routes/user.js";
 import DisputeRouter from "./routes/dispute.js";
 import AuthRouter from "./routes/auth.js";
+import CronRouter from "./routes/cron.js";
 
 const PORT = process.env.PORT || 9000;
 const URL = `http://127.0.0.1:${PORT}`;
@@ -64,18 +65,27 @@ app.use("/api/missions", MissionsRouter);
 app.use("/api/stripe", StripeRouter);
 app.use("/api/users", UserRouter);
 app.use("/api/disputes", DisputeRouter);
+app.use("/api/cron", CronRouter);
 
 cron.schedule("0 * * * *", async () => {
   try {
-    await axios.post(`${process.env.API_URL}/api/missions/should-remind`);
+    await axios.post(`${process.env.API_URL}/api/cron/should-remind`);
   } catch (error) {
     console.log("Error while completing and paying missions", error);
   }
 });
 
-cron.schedule("0  * * * *", async () => {
+cron.schedule("* * * * * *", async () => {
   try {
-    await axios.post(`${process.env.API_URL}/api/missions/should-complete`);
+    await axios.post(`${process.env.API_URL}/api/cron/should-complete`);
+  } catch (error) {
+    console.log("Error while completing and paying missions", error);
+  }
+});
+
+cron.schedule("* * * * * *", async () => {
+  try {
+    await axios.post(`${process.env.API_URL}/api/cron/should-pay`);
   } catch (error) {
     console.log("Error while completing and paying missions", error);
   }
@@ -83,7 +93,7 @@ cron.schedule("0  * * * *", async () => {
 
 cron.schedule("0 * * * *", async () => {
   try {
-    await axios.post(`${process.env.API_URL}/api/disputes/check-disputes`);
+    await axios.post(`${process.env.API_URL}/api/cron/check-disputes`);
   } catch (error) {
     console.log("Error while completing and paying missions", error);
   }
