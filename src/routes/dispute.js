@@ -152,18 +152,11 @@ router.post(
 
 router.post("/check-disputes", async (req, res) => {
   const now = dayjs();
-  const twelveHoursAgo = now.subtract(12, "hour");
   try {
-    const missions = await Mission.find({
-      $expr: {
-        $and: [
-          {
-            $gte: ["$endDate", twelveHoursAgo.toDate()],
-          },
-          { $lt: ["$endDate", now.toDate()] },
-        ],
-      },
-      status: "disputed",
+    const allMissions = await Mission.find({ status: "completed" });
+    const missions = allMissions.filter((mission) => {
+      const endDate = dayjs(mission.endDate);
+      return endDate.diff(now, "hour") > 36;
     });
     for (const mission of missions) {
       const providerHasResponded = mission.dispute.messages.some(

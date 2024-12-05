@@ -45,7 +45,6 @@ router.post("/sign-up", async (req, res) => {
   try {
     const bytes = CryptoJS.AES.decrypt(password, PUBLIC_AUTH_KEY);
     decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
-    console.log("decryptedPassword", decryptedPassword);
   } catch (error) {
     return res
       .status(400)

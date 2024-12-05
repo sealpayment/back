@@ -31,14 +31,8 @@ router.post(
       const missionId = session.metadata.missionId;
       try {
         const mission = await Mission.findById(missionId).exec();
-        const endDate = dayjs()
-          .add(3, "days")
-          .set("second", 0)
-          .set("millisecond", 0);
-        const completedDate = dayjs()
-          .add(1, "days")
-          .set("second", 0)
-          .set("millisecond", 0);
+        const endDate = dayjs().add(168, "hours");
+        const completedDate = dayjs().add(120, "hours");
         mission.status = "active";
         mission.endDate = endDate;
         mission.paymentIntentId = session.payment_intent;
