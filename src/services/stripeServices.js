@@ -307,7 +307,6 @@ export async function getConnectedAccountBalance(connectedAccountId) {
 
     const payouts = await stripe.payouts.list(
       {
-        status: "paid",
         limit: 100,
       },
       {
