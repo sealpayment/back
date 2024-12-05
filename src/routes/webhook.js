@@ -11,7 +11,7 @@ import { currencyMap } from "../utils/helpers.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-const WEBSITE_URL = process.env.WEBSITE_URL;
+const EXPRESS_MODE = process.env.EXPRESS_MODE === "true";
 
 const router = express.Router();
 router.post(
@@ -31,8 +31,8 @@ router.post(
       const missionId = session.metadata.missionId;
       try {
         const mission = await Mission.findById(missionId).exec();
-        const endDate = dayjs().add(168, "hours");
-        const completedDate = dayjs().add(120, "hours");
+        const endDate = dayjs().add(EXPRESS_MODE ? 7 : 168, "hours");
+        const completedDate = dayjs().add(EXPRESS_MODE ? 5 : 120, "hours");
         mission.status = "active";
         mission.endDate = endDate;
         mission.paymentIntentId = session.payment_intent;
@@ -58,10 +58,6 @@ router.post(
               completed_date: completedDate.format("DD/MM/YYYY"),
             });
           } else {
-            console.log(
-              "sending email to anonymous recipient",
-              mission.recipient
-            );
             sendEmailWithTemplateKey(
               mission.recipient,
               "missionReceivedAnonymous",

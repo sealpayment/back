@@ -11,6 +11,7 @@ import { User } from "../models/userModel.js";
 import { currencyMap } from "../utils/helpers.js";
 
 const WEBSITE_URL = process.env.WEBSITE_URL;
+const EXPRESS_MODE = process.env.EXPRESS_MODE === "true";
 
 const router = express.Router();
 
@@ -19,9 +20,7 @@ router.post("/should-remind", async (req, res) => {
   try {
     const missions = await Mission.find({ status: "active" });
     const actives = missions.filter((mission) => {
-      const endDate = dayjs(mission.endDate);
-      const diff = endDate.diff(now, "hour");
-      return diff > 96 && diff < 120 && !mission.reminderSent;
+      return dayjs(mission.endDate).diff(now, "hour") < EXPRESS_MODE ? 3 : 72;
     });
     for (const m of actives) {
       const client = await User.findById(m.from_user_sub);
@@ -48,7 +47,7 @@ router.post("/should-complete", async (req, res) => {
   try {
     const missions = await Mission.find({ status: "active" });
     const actives = missions.filter((mission) => {
-      return dayjs(mission.endDate).diff(now, "hour") < 48;
+      return dayjs(mission.endDate).diff(now, "hour") < EXPRESS_MODE ? 2 : 48;
     });
     for (const m of actives) {
       m.status = "completed";
@@ -91,7 +90,7 @@ router.post("/should-pay", async (req, res) => {
   try {
     const missions = await Mission.find({ status: "completed" });
     const completed = missions.filter((mission) => {
-      return dayjs(mission.endDate).diff(now, "hour") < 36;
+      return dayjs(mission.endDate).diff(now, "hour") < EXPRESS_MODE ? 1 : 36;
     });
     for (const m of completed) {
       const client = await User.findById(m?.from_user);
@@ -135,7 +134,9 @@ router.post("/check-disputes", async (req, res) => {
   try {
     const missions = await Mission.find({ status: "disputed" });
     const disputed = missions.filter((mission) => {
-      return dayjs(mission.dispute.endDate).diff(now, "hour") < 12;
+      return dayjs(mission.dispute.endDate).diff(now, "hour") <= EXPRESS_MODE
+        ? 0
+        : 12;
     });
     for (const mD of disputed) {
       const providerHasResponded = mD.dispute.messages.some(

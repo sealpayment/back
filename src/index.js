@@ -70,29 +70,8 @@ app.use("/api/cron", CronRouter);
 cron.schedule("0 * * * *", async () => {
   try {
     await axios.post(`${process.env.API_URL}/api/cron/should-remind`);
-  } catch (error) {
-    console.log("Error while completing and paying missions", error);
-  }
-});
-
-cron.schedule("* * * * * *", async () => {
-  try {
     await axios.post(`${process.env.API_URL}/api/cron/should-complete`);
-  } catch (error) {
-    console.log("Error while completing and paying missions", error);
-  }
-});
-
-cron.schedule("* * * * * *", async () => {
-  try {
     await axios.post(`${process.env.API_URL}/api/cron/should-pay`);
-  } catch (error) {
-    console.log("Error while completing and paying missions", error);
-  }
-});
-
-cron.schedule("0 * * * *", async () => {
-  try {
     await axios.post(`${process.env.API_URL}/api/cron/check-disputes`);
   } catch (error) {
     console.log("Error while completing and paying missions", error);
