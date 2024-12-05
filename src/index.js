@@ -73,7 +73,7 @@ cron.schedule("0 * * * *", async () => {
   }
 });
 
-cron.schedule("* * * * * *", async () => {
+cron.schedule("0  * * * *", async () => {
   try {
     await axios.post(`${process.env.API_URL}/api/missions/should-complete`);
   } catch (error) {
