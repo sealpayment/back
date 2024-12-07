@@ -1,8 +1,9 @@
 import Stripe from "stripe";
+import fs from "fs";
+
 import { User } from "../models/userModel.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 const WEBSITE_URL = process.env.WEBSITE_URL;
 
 export async function createStripePaymentLink(mission, toUser) {
@@ -49,57 +50,6 @@ export async function createStripePaymentLink(mission, toUser) {
   }
 }
 
-export async function getOrCreateCustomer(userId) {
-  try {
-    const customers = await stripe.customers.search({
-      query: `metadata['custom_id']:'${userId}'`,
-    });
-
-    if (customers.data.length > 0) {
-      return customers.data[0];
-    } else {
-      const newCustomer = await stripe.customers.create({
-        metadata: { custom_id: userId },
-      });
-      return newCustomer;
-    }
-  } catch (error) {
-    throw new Error(
-      "Erreur lors de la récupération ou création du client : " + error.message
-    );
-  }
-}
-
-export async function getPaymentMethods(customerId) {
-  try {
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: customerId,
-      type: "card",
-    });
-    return paymentMethods.data;
-  } catch (error) {
-    throw new Error(
-      "Erreur lors de la récupération des moyens de paiement : " + error.message
-    );
-  }
-}
-
-export async function addPaymentMethod(customerId, paymentMethodId) {
-  try {
-    const paymentMethod = await stripe.paymentMethods.attach(paymentMethodId, {
-      customer: customerId,
-    });
-    await stripe.customers.update(customerId, {
-      invoice_settings: { default_payment_method: paymentMethodId },
-    });
-    return paymentMethod;
-  } catch (error) {
-    throw new Error(
-      "Erreur lors de l'ajout du moyen de paiement : " + error.message
-    );
-  }
-}
-
 export async function createConnectedAccount(userData) {
   try {
     if (!userData.accountToken) {
@@ -123,43 +73,27 @@ export async function createConnectedAccount(userData) {
   }
 }
 
-export async function updateConnectedAccount(connectedAccountId, userData) {
+export async function uploadIdentityDocument(file) {
+  const fileStream = fs.createReadStream(file.path);
+  const stripeFile = await stripe.files.create({
+    purpose: "identity_document",
+    file: {
+      data: fileStream,
+      name: file.filename,
+      type: file.mimetype,
+    },
+  });
+  fs.unlinkSync(file.path);
+  return stripeFile.id;
+}
+
+export async function updateConnectedAccount(connectedAccountId, token) {
   try {
-    const accountToken = await stripe.tokens.create({
-      account: {
-        individual: {
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          email: userData.email,
-          address: {
-            line1: userData.address.line1,
-            city: userData.address.city,
-            country: userData.address.country,
-            postal_code: userData.address.postal_code,
-          },
-          dob: {
-            day: userData.dob.day,
-            month: userData.dob.month,
-            year: userData.dob.year,
-          },
-          phone: userData.phone,
-        },
-        business_type: "individual",
-        tos_shown_and_accepted: true,
-      },
-    });
-    await stripe.accounts.update(connectedAccountId, {
-      account_token: accountToken.id,
-      business_profile: {
-        mcc: userData.mcc, // Code de catégorie marchande
-        product_description: userData.product_description,
-      },
-      external_account: userData.bank_account, // Détails du compte bancaire
+    return await stripe.accounts.update(connectedAccountId, {
+      account_token: token,
     });
   } catch (error) {
-    throw new Error(
-      "Erreur lors de la mise à jour du compte connecté : " + error.message
-    );
+    throw new Error(error.message);
   }
 }
 
@@ -179,25 +113,6 @@ export async function linkAccountToConnectedAccount(
   }
 }
 
-export async function createBankAccount(iban, accountHolderName) {
-  try {
-    const token = await stripe.tokens.create({
-      bank_account: {
-        country: "FR",
-        currency: "eur",
-        account_holder_name: accountHolderName,
-        account_number: iban,
-        account_holder_type: "individual",
-      },
-    });
-    return token.id;
-  } catch (error) {
-    throw new Error(
-      "Erreur lors de la création du compte bancaire : " + error.message
-    );
-  }
-}
-
 export async function getConnectedBanks(connectedAccountId) {
   try {
     const banks = await stripe.accounts.listExternalAccounts(
@@ -210,48 +125,6 @@ export async function getConnectedBanks(connectedAccountId) {
   } catch (error) {
     throw new Error(
       "Erreur lors de la récupération des comptes bancaires : " + error.message
-    );
-  }
-}
-
-export async function transferToConnectedAccount(connectedAccountId, amount) {
-  try {
-    const account = await stripe.accounts.retrieve(connectedAccountId);
-    // if (account.requirements.currently_due.length > 0) {
-    //   return;
-    // }
-    const transfer = await stripe.transfers.create({
-      amount: amount,
-      currency: "eur",
-      destination: connectedAccountId,
-    });
-    return transfer;
-  } catch (error) {
-    throw new Error("Erreur lors du transfert des fonds : " + error.message);
-  }
-}
-
-export async function transferFromConnectedAccount(connectedAccountId, amount) {
-  try {
-    const account = await stripe.accounts.retrieve();
-
-    const transfer = await stripe.transfers.create(
-      {
-        amount: amount,
-        currency: "eur",
-        destination: account.id,
-        source_type: "card",
-      },
-      {
-        stripeAccount: connectedAccountId, // L'ID du compte connecté
-      }
-    );
-
-    return transfer;
-  } catch (error) {
-    throw new Error(
-      "Erreur lors du transfert des fonds depuis le compte connecté : " +
-        error.message
     );
   }
 }

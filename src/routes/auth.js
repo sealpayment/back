@@ -60,12 +60,6 @@ router.post("/sign-up", async (req, res) => {
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
-    if (req.body.bankAccountToken) {
-      await linkAccountToConnectedAccount(
-        req.body.bankAccountToken,
-        connectedAccount.id
-      );
-    }
     const newUser = new User({
       ...req.body,
       password: passwordHash,

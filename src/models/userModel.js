@@ -14,6 +14,10 @@ const UserSchema = new Schema({
   postal: { type: String },
   dob: { type: String },
   connected_account_id: { type: String },
+  hasCompleted: {
+    bankAccount: { type: Boolean, default: false },
+    identity: { type: Boolean, default: false },
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

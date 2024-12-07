@@ -4,7 +4,6 @@ import { checkJwt } from "../utils/auth.js";
 import { User } from "../models/userModel.js";
 
 import {
-  createBankAccount,
   linkAccountToConnectedAccount,
   getConnectedBanks,
   payoutToConnectedBankAccount,
@@ -15,17 +14,11 @@ const router = express.Router();
 
 router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
   try {
-    const bankAccountId = await createBankAccount(
-      body.iban,
-      body.accountHolderName,
-      user.connected_account_id
-    );
-    await linkAccountToConnectedAccount(
-      bankAccountId,
-      user.connected_account_id
-    );
+    await linkAccountToConnectedAccount(body.token, user.connected_account_id);
+    user.hasCompleted.bankAccount = true;
+    await user.save();
     res.json({
-      account_id: bankAccountId,
+      message: "Account linked successfully",
     });
   } catch (error) {
     console.log(error);
