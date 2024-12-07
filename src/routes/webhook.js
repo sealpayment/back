@@ -31,8 +31,17 @@ router.post(
       const missionId = session.metadata.missionId;
       try {
         const mission = await Mission.findById(missionId).exec();
-        const endDate = dayjs().add(EXPRESS_MODE ? 7 : 168, "hours");
-        const completedDate = dayjs().add(EXPRESS_MODE ? 5 : 120, "hours");
+        const endDate = dayjs()
+          .add(EXPRESS_MODE ? 7 : 168, EXPRESS_MODE ? "minute" : "hour")
+          .set(EXPRESS_MODE ? "second" : "minute", 0)
+          .set(EXPRESS_MODE ? "millisecond" : "second", 0)
+          .set("millisecond", 0);
+
+        const completedDate = dayjs()
+          .add(EXPRESS_MODE ? 5 : 120, EXPRESS_MODE ? "minute" : "hour")
+          .set(EXPRESS_MODE ? "second" : "minute", 0)
+          .set(EXPRESS_MODE ? "millisecond" : "second", 0)
+          .set("millisecond", 0);
         mission.status = "active";
         mission.endDate = endDate;
         mission.paymentIntentId = session.payment_intent;
@@ -55,7 +64,7 @@ router.post(
               amount: mission.amount,
               currency: currencyMap[mission.currency],
               specifications: mission.description,
-              completed_date: completedDate.format("DD/MM/YYYY"),
+              completed_date: completedDate.format("YYYY MM DD HH:mm"),
             });
           } else {
             sendEmailWithTemplateKey(
@@ -68,7 +77,7 @@ router.post(
                 amount: mission.amount,
                 currency: currencyMap[mission.currency],
                 specifications: mission.description,
-                completed_date: completedDate.format("DD/MM/YYYY"),
+                completed_date: completedDate.format("YYYY MM DD HH:mm"),
               }
             );
           }
@@ -87,7 +96,7 @@ router.post(
             amount: mission.amount,
             currency: currencyMap[mission.currency],
             specifications: mission.description,
-            completed_date: completedDate.format("DD/MM/YYYY"),
+            completed_date: completedDate.format("YYYY MM DD HH:mm"),
           });
         }
         await mission.save();

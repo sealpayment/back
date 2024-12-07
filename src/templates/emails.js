@@ -184,6 +184,8 @@ export default {
     details:
       "<p>- If you’re satisfied with the work, no action is needed.</p>" +
       "<p>- If there’s an issue, open a dispute before the release deadline.</p>",
+    action_title: "Open a Dispute",
+    action_url: `${WEBSITE_URL}/mission/dispute/{{ mission_id }}`,
   },
   missionCompletedProvider: {
     subject: "Mission Completed – Funds Will Be Released Soon",

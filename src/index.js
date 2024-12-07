@@ -16,6 +16,7 @@ import DisputeRouter from "./routes/dispute.js";
 import AuthRouter from "./routes/auth.js";
 import CronRouter from "./routes/cron.js";
 
+const EXPRESS_MODE = process.env.EXPRESS_MODE === "true";
 const PORT = process.env.PORT || 9000;
 const URL = `http://127.0.0.1:${PORT}`;
 const DB_URL =
@@ -67,7 +68,7 @@ app.use("/api/users", UserRouter);
 app.use("/api/disputes", DisputeRouter);
 app.use("/api/cron", CronRouter);
 
-cron.schedule("0 * * * *", async () => {
+cron.schedule(EXPRESS_MODE ? "* * * * *" : "0 * * * *", async () => {
   try {
     await axios.post(`${process.env.API_URL}/api/cron/should-remind`);
     await axios.post(`${process.env.API_URL}/api/cron/should-complete`);

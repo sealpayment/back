@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
@@ -44,9 +45,8 @@ const MissionSchema = new Schema({
     ],
     default: "draft",
   },
-  expressMode: { type: Boolean, default: false },
   reminderSent: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: dayjs().second(0).millisecond(0) },
 });
 
 const Mission = mongoose.model("Mission", MissionSchema);

@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { User } from "../models/userModel.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -6,6 +7,7 @@ const WEBSITE_URL = process.env.WEBSITE_URL;
 
 export async function createStripePaymentLink(mission, toUser) {
   try {
+    const fromUser = await User.findById(mission.from_user_sub);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       payment_method_options: {
@@ -13,6 +15,7 @@ export async function createStripePaymentLink(mission, toUser) {
           request_three_d_secure: "any",
         },
       },
+      customer_email: fromUser?.email,
       line_items: [
         {
           price_data: {

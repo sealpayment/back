@@ -18,25 +18,28 @@ const router = express.Router();
 router.post("/should-remind", async (req, res) => {
   const now = dayjs();
   try {
-    const missions = await Mission.find({ status: "active" });
-    const actives = missions.filter((mission) => {
-      return dayjs(mission.endDate).diff(now, "hour") < EXPRESS_MODE ? 3 : 72;
+    const missions = await Mission.find({
+      status: "active",
+      reminderSent: false,
     });
-    for (const m of actives) {
-      const client = await User.findById(m.from_user_sub);
-      sendEmailWithTemplateKey(client?.email, "missionReminder", {
-        name: client.firstName,
-        mission_id: m.id,
-      });
-      m.reminderSent = true;
-      await m.save();
+    for (const m of missions) {
+      const diff = dayjs(m.endDate).diff(now, EXPRESS_MODE ? "minute" : "hour");
+      if (EXPRESS_MODE ? diff < 3 : diff < 72) {
+        m.reminderSent = true;
+        await m.save();
+        const provider = await User.findById(m.to_user_sub);
+        sendEmailWithTemplateKey(provider?.email, "missionReminder", {
+          name: provider.firstName,
+          mission_id: m.id,
+        });
+      }
     }
     res.status(200).json({
-      message: `Missions completed successfully`,
+      message: `Reminders sent successfully`,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Erreur lors de la mise à jour des missions.",
+      message: "Erreur lors de l'envoi des reminders.",
       error: error.message,
     });
   }
@@ -45,33 +48,38 @@ router.post("/should-remind", async (req, res) => {
 router.post("/should-complete", async (req, res) => {
   const now = dayjs();
   try {
-    const missions = await Mission.find({ status: "active" });
-    const actives = missions.filter((mission) => {
-      return dayjs(mission.endDate).diff(now, "hour") < EXPRESS_MODE ? 2 : 48;
+    const missions = await Mission.find({
+      status: "active",
+      reminderSent: true,
     });
-    for (const m of actives) {
-      m.status = "completed";
-      await m.save();
-      const client = await User.findById(m?.from_user_sub);
-      const provider = await User.findById(m?.to_user_sub);
-      if (client?.email) {
-        sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
-          name: client?.firstName,
-          provider_email: provider?.email,
-          currency: currencyMap[m.currency],
-          amount: m.amount.toFixed(2),
-          action_title: "Open a Dispute",
-          action_url: `${WEBSITE_URL}/mission/dispute/${m.id}`,
-        });
-      }
-      if (provider?.email) {
-        sendEmailWithTemplateKey(provider?.email, "missionCompletedProvider", {
-          name: provider?.firstName,
-          currency: currencyMap[m.currency],
-          amount: m.amount.toFixed(2),
-          client_first_name: client?.firstName,
-          mission_id: m.id,
-        });
+    for (const m of missions) {
+      const diff = dayjs(m.endDate).diff(now, EXPRESS_MODE ? "minute" : "hour");
+      if (EXPRESS_MODE ? diff < 2 : diff < 48) {
+        m.status = "completed";
+        await m.save();
+        const client = await User.findById(m?.from_user_sub);
+        const provider = await User.findById(m?.to_user_sub);
+        if (client?.email) {
+          sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
+            name: client?.firstName,
+            provider_email: provider?.email,
+            currency: currencyMap[m.currency],
+            amount: m.amount.toFixed(2),
+          });
+        }
+        if (provider?.email) {
+          sendEmailWithTemplateKey(
+            provider?.email,
+            "missionCompletedProvider",
+            {
+              name: provider?.firstName,
+              currency: currencyMap[m.currency],
+              amount: m.amount.toFixed(2),
+              client_first_name: client?.firstName,
+              mission_id: m.id,
+            }
+          );
+        }
       }
     }
     res.status(200).json({
@@ -88,34 +96,40 @@ router.post("/should-complete", async (req, res) => {
 router.post("/should-pay", async (req, res) => {
   const now = dayjs();
   try {
-    const missions = await Mission.find({ status: "completed" });
-    const completed = missions.filter((mission) => {
-      return dayjs(mission.endDate).diff(now, "hour") < EXPRESS_MODE ? 1 : 36;
+    const missions = await Mission.find({
+      status: "completed",
     });
-    for (const m of completed) {
-      const client = await User.findById(m?.from_user);
-      const provider = await User.findById(m?.to_user);
-      await capturePaymentIntent(m.paymentIntentId);
-      m.status = "paid";
-      await m.save();
-      if (client?.email) {
-        sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
-          name: client?.firstName,
-          provider_email: provider?.email,
-          currency: currencyMap[m.currency],
-          amount: m.amount.toFixed(2),
-          action_title: "Open a Dispute",
-          action_url: `${WEBSITE_URL}/mission/dispute/${m.id}`,
-        });
-      }
-      if (provider?.email) {
-        sendEmailWithTemplateKey(provider?.email, "missionCompletedProvider", {
-          name: provider?.firstName,
-          currency: currencyMap[m.currency],
-          amount: m.amount.toFixed(2),
-          client_first_name: client?.firstName,
-          mission_id: m.id,
-        });
+    for (const m of missions) {
+      const diff = dayjs(m.endDate).diff(now, EXPRESS_MODE ? "minute" : "hour");
+      if (EXPRESS_MODE ? diff < 1 : diff < 36) {
+        const client = await User.findById(m?.from_user);
+        const provider = await User.findById(m?.to_user);
+        await capturePaymentIntent(m.paymentIntentId);
+        m.status = "paid";
+        await m.save();
+        if (client?.email) {
+          sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
+            name: client?.firstName,
+            provider_email: provider?.email,
+            currency: currencyMap[m.currency],
+            amount: m.amount.toFixed(2),
+            action_title: "Open a Dispute",
+            action_url: `${WEBSITE_URL}/mission/dispute/${m.id}`,
+          });
+        }
+        if (provider?.email) {
+          sendEmailWithTemplateKey(
+            provider?.email,
+            "missionCompletedProvider",
+            {
+              name: provider?.firstName,
+              currency: currencyMap[m.currency],
+              amount: m.amount.toFixed(2),
+              client_first_name: client?.firstName,
+              mission_id: m.id,
+            }
+          );
+        }
       }
     }
     res.status(200).json({
@@ -134,7 +148,10 @@ router.post("/check-disputes", async (req, res) => {
   try {
     const missions = await Mission.find({ status: "disputed" });
     const disputed = missions.filter((mission) => {
-      return dayjs(mission.dispute.endDate).diff(now, "hour") <= EXPRESS_MODE
+      return dayjs(mission.dispute.endDate).diff(
+        now,
+        EXPRESS_MODE ? "minute" : "hour"
+      ) <= EXPRESS_MODE
         ? 0
         : 12;
     });
