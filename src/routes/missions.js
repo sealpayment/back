@@ -131,4 +131,9 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
   }
 });
 
+router.post("/test", (req, res) => {
+  sendEmailWithTemplateKey("tristan.luong@gmail.com", req.body.key, req.body);
+  res.status(200).json({ message: "Email sent successfully" });
+});
+
 export default router;

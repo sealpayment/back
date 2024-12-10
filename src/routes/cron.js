@@ -65,6 +65,7 @@ router.post("/should-complete", async (req, res) => {
             provider_email: provider?.email,
             currency: currencyMap[m.currency],
             amount: m.amount.toFixed(2),
+            mission_id: m.id,
           });
         }
         if (provider?.email) {
@@ -113,8 +114,7 @@ router.post("/should-pay", async (req, res) => {
             provider_email: provider?.email,
             currency: currencyMap[m.currency],
             amount: m.amount.toFixed(2),
-            action_title: "Open a Dispute",
-            action_url: `${WEBSITE_URL}/mission/dispute/${m.id}`,
+            mission_id: m.id,
           });
         }
         if (provider?.email) {
