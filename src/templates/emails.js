@@ -55,7 +55,7 @@ export default {
     title: "Reset Your Password",
     body: "You’ve requested to reset your password. Click the button below to create a new password and access your account.",
     action_title: "Reset Password",
-    action_link: "{{ reset_link }}",
+    action_link: `${WEBSITE_URL}/auth/reset-password?token={{ token }}`,
   },
   signupConfirmEmail: {
     subject: "Please Confirm Your Email",

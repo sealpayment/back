@@ -18,7 +18,7 @@ import { Token } from "../models/tokenModel.js";
 
 const router = express.Router();
 
-const { PUBLIC_AUTH_KEY } = process.env;
+const { PUBLIC_AUTH_KEY, WEBSITE_URL } = process.env;
 
 router.post("/sign-in", async (req, res) => {
   const { email, password } = req.body;
@@ -116,7 +116,7 @@ router.post("/forgot-password", async (req, res) => {
     });
     sendEmailWithTemplateKey(user.email, "forgotPassword", {
       name: user.firstName,
-      reset_link: `${process.env.WEBSITE_URL}/auth/reset-password?token=${token}`,
+      token,
     });
     return res.status(200).json({ message: "Email sent" });
   }
