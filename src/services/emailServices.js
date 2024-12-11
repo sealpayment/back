@@ -63,14 +63,16 @@ export const sendEmailWithTemplateKey = async (
       currency: currencyMap[mission?.currency],
       completed_date: completedDate,
       payment_id: stripePaymentId,
-      logo: `${process.env.API_URL}/images/logo.png`,
       ...extras,
     };
     const renderedTemplate = {};
     for (const [templateKey, templateValue] of Object.entries(template)) {
       renderedTemplate[templateKey] = mustache.render(templateValue, variables);
     }
-    const document = mustache.render(file, renderedTemplate);
+    const document = mustache.render(file, {
+      ...renderedTemplate,
+      logo: `${process.env.API_URL}/images/logo.png`,
+    });
     return sendEmail(recipient, renderedTemplate.subject, document);
   } catch (error) {
     console.log(error);
