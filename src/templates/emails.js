@@ -33,7 +33,7 @@ export default {
     detail_title: "Payment details:",
     details:
       "<p><strong>Payment number:</strong> {{ mission_id }}</p>" +
-      "<p><strong>Payer:</strong> {{ payer_email }}</p>" +
+      "<p><strong>Payer:</strong> {{ client_email }}</p>" +
       "<p><strong>Amount:</strong> {{ currency }}{{ amount }}</p>" +
       "<p><strong>Mission deadline:</strong> {{completed_date}}</p>" +
       "<p><strong>Specifications: </strong>{{specifications}}</p>",
@@ -68,7 +68,7 @@ export default {
     detail_title: "Payment details:",
     details:
       "<p><strong>Payment number:</strong> {{ mission_id }}</p>" +
-      "<p><strong>Payer:</strong> {{ payer_email }}</p>" +
+      "<p><strong>Payer:</strong> {{ client_email }}</p>" +
       "<p><strong>Amount:</strong> {{ currency }}{{ amount }}</p>" +
       "<p><strong>Mission deadline:</strong> {{completed_date}}</p>" +
       "<p><strong>Specifications: </strong>{{specifications}}</p>",
