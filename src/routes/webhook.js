@@ -36,12 +36,6 @@ router.post(
           .set(EXPRESS_MODE ? "second" : "minute", 0)
           .set(EXPRESS_MODE ? "millisecond" : "second", 0)
           .set("millisecond", 0);
-
-        const completedDate = dayjs()
-          .add(EXPRESS_MODE ? 5 : 120, EXPRESS_MODE ? "minute" : "hour")
-          .set(EXPRESS_MODE ? "second" : "minute", 0)
-          .set(EXPRESS_MODE ? "millisecond" : "second", 0)
-          .set("millisecond", 0);
         mission.status = "active";
         mission.endDate = endDate;
         mission.paymentIntentId = session.payment_intent;
@@ -49,55 +43,23 @@ router.post(
         const client = await User.findById(mission?.from_user_sub);
         const provider = await User.findById(mission?.to_user_sub);
         if (isMissionSent) {
-          sendEmailWithTemplateKey(client.email, "missionCreated", {
-            name: client.firstName,
-            mission_id: mission.id,
-            amount: mission.amount,
-            currency: currencyMap[mission.currency],
-            provider_email: mission.recipient,
-            specifications: mission.description,
-          });
+          sendEmailWithTemplateKey(client.email, "missionCreated", mission);
           if (provider) {
-            sendEmailWithTemplateKey(provider.email, "missionReceivedUser", {
-              client_first_name: client.firstName,
-              client_email: client.email,
-              amount: mission.amount,
-              currency: currencyMap[mission.currency],
-              specifications: mission.description,
-              completed_date: completedDate.format("YYYY MM DD HH:mm"),
-            });
+            sendEmailWithTemplateKey(
+              provider.email,
+              "missionReceivedUser",
+              mission
+            );
           } else {
             sendEmailWithTemplateKey(
               mission.recipient,
               "missionReceivedAnonymous",
-              {
-                name: mission.recipient,
-                client_first_name: client.firstName,
-                client_email: client.email,
-                amount: mission.amount,
-                currency: currencyMap[mission.currency],
-                specifications: mission.description,
-                completed_date: completedDate.format("YYYY MM DD HH:mm"),
-              }
+              mission
             );
           }
         } else {
-          sendEmailWithTemplateKey(client.email, "missionCreated", {
-            name: client.firstName,
-            mission_id: mission.id,
-            amount: mission.amount,
-            currency: currencyMap[mission.currency],
-            provider_email: provider.email,
-            specifications: mission.description,
-          });
-          sendEmailWithTemplateKey(provider.email, "missionReceived", {
-            client_first_name: client.firstName,
-            client_email: client.email,
-            amount: mission.amount,
-            currency: currencyMap[mission.currency],
-            specifications: mission.description,
-            completed_date: completedDate.format("YYYY MM DD HH:mm"),
-          });
+          sendEmailWithTemplateKey(client.email, "missionCreated", mission);
+          sendEmailWithTemplateKey(provider.email, "missionReceived", mission);
         }
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });

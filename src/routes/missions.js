@@ -75,16 +75,7 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
       sendEmailWithTemplateKey(
         mission.recipient,
         recipientUser?._id ? "paymentRequestUser" : "paymentRequestAnonymous",
-        {
-          name: recipientUser?.firstName ?? mission.recipient,
-          provider_email: user.email,
-          currency: currencyMap[mission.currency],
-          amount: parseFloat(mission.amount).toFixed(2),
-          details: mission.description,
-          action_link: recipientUser?._id
-            ? link
-            : `${WEBSITE_URL}/auth/register`,
-        }
+        newMission
       );
     } catch (error) {
       console.log("Error while sending email", error);
@@ -113,14 +104,8 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
     }
     if (mission.paymentIntentId) {
       const client = await User.findById(mission.from_user_sub);
-      const provider = await User.findById(mission.to_user_sub);
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
-      sendEmailWithTemplateKey(client.email, "missionCancelled", {
-        name: client.firstName,
-        currency: currencyMap[mission.currency],
-        amount: mission.amount.toFixed(2),
-        provider_email: provider.email,
-      });
+      sendEmailWithTemplateKey(client.email, "missionCancelled", mission);
     }
     mission.status = "refund";
     await mission.save();

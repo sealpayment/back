@@ -68,36 +68,16 @@ router.post(
     const client = await User.findById(mission.from_user_sub);
     const provider = await User.findById(mission.to_user_sub);
     if (mission.dispute.messages.length === 1) {
-      sendEmailWithTemplateKey(client.email, "disputeOpenedClient", {
-        name: client.firstName,
-        currency: currencyMap[mission.currency],
-        amount: mission.amount,
-        email: provider.email,
-        mission_id: mission.id,
-      });
-      sendEmailWithTemplateKey(provider.email, "disputeOpenedProvider", {
-        name: provider.firstName,
-        currency: currencyMap[mission.currency],
-        amount: mission.amount,
-        email: client.email,
-        mission_id: mission.id,
-      });
+      sendEmailWithTemplateKey(client.email, "disputeOpenedClient", mission);
+      sendEmailWithTemplateKey(
+        provider.email,
+        "disputeOpenedProvider",
+        mission
+      );
     }
     if (mission.dispute.messages.length === 2) {
-      sendEmailWithTemplateKey(provider.email, "disputeAnswered", {
-        name: provider.firstName,
-        currency: currencyMap[mission.currency],
-        amount: mission.amount,
-        mission_id: mission.id,
-        resolution_deadline: dayjs(mission.endDate).format("MMMM DD, YYYY"),
-      });
-      sendEmailWithTemplateKey(client.email, "disputeAnswered", {
-        name: client.firstName,
-        currency: currencyMap[mission.currency],
-        amount: mission.amount,
-        mission_id: mission.id,
-        resolution_deadline: dayjs(mission.endDate).format("MMMM DD, YYYY"),
-      });
+      sendEmailWithTemplateKey(provider.email, "disputeAnswered", mission);
+      sendEmailWithTemplateKey(client.email, "disputeAnswered", mission);
     }
     return res.status(200).json({
       message: "Dispute updated successfully.",
@@ -126,21 +106,13 @@ router.post(
     }
     const client = await User.findById(mission.from_user_sub);
     const provider = await User.findById(mission.to_user_sub);
-    sendEmailWithTemplateKey(client.email, "disputeReviewed", {
-      name: client.firstName,
-      amount: mission.amount.toFixed(2),
-      currency: currencyMap[mission.currency],
-      email: provider.email,
+    sendEmailWithTemplateKey(client.email, "disputeReviewed", mission, {
       outcome_description:
         body.action === "refund"
           ? "Funds have been refunded to your payment method."
           : "Funds have been released to the provider.",
     });
-    sendEmailWithTemplateKey(provider.email, "disputeReviewed", {
-      name: provider.firstName,
-      amount: mission.amount.toFixed(2),
-      currency: currencyMap[mission.currency],
-      email: client.email,
+    sendEmailWithTemplateKey(provider.email, "disputeReviewed", mission, {
       outcome_description:
         body.action === "refund"
           ? "Funds have been refunded to the client's payment method."

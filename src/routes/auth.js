@@ -3,15 +3,8 @@ import CryptoJS from "crypto-js";
 import bcrypt from "bcrypt";
 
 import { User } from "../models/userModel.js";
-import {
-  generateAccessToken,
-  generateRandomPassword,
-  getTokenPayload,
-} from "../utils/helpers.js";
-import {
-  createConnectedAccount,
-  linkAccountToConnectedAccount,
-} from "../services/stripeServices.js";
+import { generateAccessToken, getTokenPayload } from "../utils/helpers.js";
+import { createConnectedAccount } from "../services/stripeServices.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 import { Token } from "../models/tokenModel.js";
@@ -32,11 +25,7 @@ router.post("/sign-in", async (req, res) => {
       .json({ message: "Erreur de décryptage du mot de passe" });
   }
   const user = await User.findOne({ email });
-  console.log(user);
-  console.log(decryptedPassword);
-  console.log(user && bcrypt.compareSync(decryptedPassword, user.password));
   if (user && bcrypt.compareSync(decryptedPassword, user.password)) {
-    console.log("User found");
     const token = generateAccessToken({
       user_id: user.id,
       user_email: user.email,
@@ -91,14 +80,15 @@ router.post("/sign-up", async (req, res) => {
       user_id: newUser.id,
       user_email: email,
     });
-    sendEmailWithTemplateKey(newUser.email, "signupSuccess", {
-      first_name: newUser.firstName,
-      last_name: newUser.lastName,
-    });
-    // sendEmailWithTemplateKey(newUser.email, "signupConfirmEmail", {
-    //   name: newUser.firstName,
-    //   action_link: `${process.env.API_URL}/api/auth/confirm-email?token=${token}`,
-    // });
+    sendEmailWithTemplateKey(
+      newUser.email,
+      "signupSuccess",
+      {},
+      {
+        first_name: newUser.firstName,
+        last_name: newUser.lastName,
+      }
+    );
     return res.status(200).json({
       accessToken: token,
     });
@@ -114,10 +104,15 @@ router.post("/forgot-password", async (req, res) => {
       user_id: user.id,
       user_email: email,
     });
-    sendEmailWithTemplateKey(user.email, "forgotPassword", {
-      name: user.firstName,
-      token,
-    });
+    sendEmailWithTemplateKey(
+      user.email,
+      "forgotPassword",
+      {},
+      {
+        name: user.firstName,
+        token,
+      }
+    );
     return res.status(200).json({ message: "Email sent" });
   }
   res.status(400).json({ message: "This email is not registered" });
@@ -163,9 +158,14 @@ router.get("/confirm-email", async (req, res) => {
     if (user) {
       user.emailVerified = true;
       await user.save();
-      sendEmailWithTemplateKey(user.email, "signupSuccess", {
-        name: user.firstName,
-      });
+      sendEmailWithTemplateKey(
+        user.email,
+        "signupSuccess",
+        {},
+        {
+          name: user.firstName,
+        }
+      );
       return res.redirect(`${process.env.WEBSITE_URL}/mission`);
     }
   } catch (error) {

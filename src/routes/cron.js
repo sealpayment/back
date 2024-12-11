@@ -28,10 +28,7 @@ router.post("/should-remind", async (req, res) => {
         m.reminderSent = true;
         await m.save();
         const provider = await User.findById(m.to_user_sub);
-        sendEmailWithTemplateKey(provider?.email, "missionReminder", {
-          name: provider.firstName,
-          mission_id: m.id,
-        });
+        sendEmailWithTemplateKey(provider?.email, "missionReminder", m);
       }
     }
     res.status(200).json({
@@ -60,25 +57,13 @@ router.post("/should-complete", async (req, res) => {
         const client = await User.findById(m?.from_user_sub);
         const provider = await User.findById(m?.to_user_sub);
         if (client?.email) {
-          sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
-            name: client?.firstName,
-            provider_email: provider?.email,
-            currency: currencyMap[m.currency],
-            amount: m.amount.toFixed(2),
-            mission_id: m.id,
-          });
+          sendEmailWithTemplateKey(client?.email, "missionCompletedClient", m);
         }
         if (provider?.email) {
           sendEmailWithTemplateKey(
             provider?.email,
             "missionCompletedProvider",
-            {
-              name: provider?.firstName,
-              currency: currencyMap[m.currency],
-              amount: m.amount.toFixed(2),
-              client_first_name: client?.firstName,
-              mission_id: m.id,
-            }
+            m
           );
         }
       }
@@ -109,27 +94,13 @@ router.post("/should-pay", async (req, res) => {
         m.status = "paid";
         await m.save();
         if (client?.email) {
-          sendEmailWithTemplateKey(client?.email, "missionCompletedClient", {
-            name: client?.firstName,
-            provider_email: provider?.email,
-            currency: currencyMap[m.currency],
-            amount: m.amount.toFixed(2),
-            action_title: "Open a Dispute",
-            action_url: `${WEBSITE_URL}/dispute/${m.id}`,
-            mission_id: m.id,
-          });
+          sendEmailWithTemplateKey(client?.email, "missionCompletedClient", m);
         }
         if (provider?.email) {
           sendEmailWithTemplateKey(
             provider?.email,
             "missionCompletedProvider",
-            {
-              name: provider?.firstName,
-              currency: currencyMap[m.currency],
-              amount: m.amount.toFixed(2),
-              client_first_name: client?.firstName,
-              mission_id: m.id,
-            }
+            m
           );
         }
       }
@@ -167,20 +138,8 @@ router.post("/check-disputes", async (req, res) => {
         await refundToCustomer(mD.paymentIntentId);
         mD.status = "refund";
         await mD.save();
-        sendEmailWithTemplateKey(provider?.email, "disputeNoAnswer", {
-          client_first_name: provider.firstName,
-          mission_id: mD.id,
-          currency: currencyMap[mD.currency],
-          amount: mD.amount.toFixed(2),
-        });
-        sendEmailWithTemplateKey(client?.email, "disputeReviewed", {
-          name: client.firstName,
-          amount: mD.amount.toFixed(2),
-          currency: currencyMap[mD.currency],
-          email: provider.email,
-          outcome_description:
-            "Funds have been refunded to your payment method due to no response from the provider.",
-        });
+        sendEmailWithTemplateKey(provider?.email, "disputeNoAnswer", mD);
+        sendEmailWithTemplateKey(client?.email, "disputeReviewed", mD);
       }
     }
     res.status(200).json({ message: "Disputes checked successfully" });
