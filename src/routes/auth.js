@@ -109,7 +109,8 @@ router.post("/forgot-password", async (req, res) => {
       "forgotPassword",
       {},
       {
-        name: user.firstName,
+        first_name: user.firstName,
+        last_name: user.lastName,
         token,
       }
     );
@@ -163,7 +164,8 @@ router.get("/confirm-email", async (req, res) => {
         "signupSuccess",
         {},
         {
-          name: user.firstName,
+          first_name: user.firstName,
+          last_name: user.lastName,
         }
       );
       return res.redirect(`${process.env.WEBSITE_URL}/mission`);
