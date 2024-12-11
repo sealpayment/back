@@ -50,6 +50,13 @@ export default {
     details:
       "As per our terms, the funds of <strong>{{ currency }}{{ amount }}</strong> will be returned to your client, <strong>{{ client_first_name }}</strong>.",
   },
+  forgotPassword: {
+    subject: "Reset Your Password",
+    title: "Reset Your Password",
+    body: "You’ve requested to reset your password. Click the button below to create a new password and access your account.",
+    action_title: "Reset Password",
+    action_link: "{{ reset_link }}",
+  },
   signupConfirmEmail: {
     subject: "Please Confirm Your Email",
     title: "Please Confirm Your Email",

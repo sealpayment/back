@@ -1,5 +1,6 @@
 import express from "express";
 import dayjs from "dayjs";
+import axios from "axios";
 
 import { checkJwt } from "../utils/auth.js";
 import {
@@ -131,8 +132,25 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
   }
 });
 
-router.post("/test", (req, res) => {
-  sendEmailWithTemplateKey("tristan.luong@gmail.com", req.body.key, req.body);
+import { APIClient, SendEmailRequest } from "customerio-node";
+const client = new APIClient("270f444061d559d5a7c6094282e63a90");
+
+router.post("/test", async (req, res) => {
+  const request = new SendEmailRequest({
+    transactional_message_id: 2,
+    identifiers: {
+      id: "tristan.luong@gmail.com",
+    },
+    to: "tristan.luong@gmail.com",
+    message_data: {
+      first_name: "Tristan",
+    },
+  });
+
+  client
+    .sendEmail(request)
+    .then((res) => console.log(res))
+    .catch((err) => console.log(err.statusCode, err.message));
   res.status(200).json({ message: "Email sent successfully" });
 });
 

@@ -2,7 +2,10 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const TokenSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+  type: {
+    type: String,
+    enum: ["reset-password"],
+  },
   token: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });

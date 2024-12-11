@@ -114,6 +114,8 @@ router.post("/should-pay", async (req, res) => {
             provider_email: provider?.email,
             currency: currencyMap[m.currency],
             amount: m.amount.toFixed(2),
+            action_title: "Open a Dispute",
+            action_url: `${WEBSITE_URL}/dispute/${m.id}`,
             mission_id: m.id,
           });
         }
