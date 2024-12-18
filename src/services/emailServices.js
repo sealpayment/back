@@ -54,14 +54,16 @@ export const sendEmailWithTemplateKey = async (
     const stripePaymentId = mission.paymentLink.split("/").pop();
     const variables = {
       client_first_name: client?.firstName,
+      client_last_name: client?.lastName,
       client_email: client?.email,
       provider_first_name: provider?.firstName,
+      provider_last_name: provider?.lastName,
       provider_email: provider?.email,
       mission_id: mission?.id,
       amount: mission?.amount,
       specifications: mission?.description,
       currency: currencyMap[mission?.currency],
-      completed_date: completedDate,
+      completed_date: completedDate.format("dddd, MMMM D, YYYY, h:mm A"),
       payment_id: stripePaymentId,
       ...extras,
     };

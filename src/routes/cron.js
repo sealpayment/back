@@ -28,7 +28,9 @@ router.post("/should-remind", async (req, res) => {
         m.reminderSent = true;
         await m.save();
         const provider = await User.findById(m.to_user_sub);
-        sendEmailWithTemplateKey(provider?.email, "missionReminder", m);
+        const providerEmail =
+          m?.type === "send" ? m.recipient : provider?.email;
+        sendEmailWithTemplateKey(providerEmail, "missionReminder", m);
       }
     }
     res.status(200).json({
@@ -56,16 +58,11 @@ router.post("/should-complete", async (req, res) => {
         await m.save();
         const client = await User.findById(m?.from_user_sub);
         const provider = await User.findById(m?.to_user_sub);
-        if (client?.email) {
-          sendEmailWithTemplateKey(client?.email, "missionCompletedClient", m);
-        }
-        if (provider?.email) {
-          sendEmailWithTemplateKey(
-            provider?.email,
-            "missionCompletedProvider",
-            m
-          );
-        }
+        const clientEmail = m?.type === "send" ? client?.email : m.recipient;
+        sendEmailWithTemplateKey(clientEmail, "missionCompletedClient", m);
+        const providerEmail =
+          m?.type === "send" ? m.recipient : provider?.email;
+        sendEmailWithTemplateKey(providerEmail, "missionCompletedProvider", m);
       }
     }
     res.status(200).json({
@@ -93,16 +90,11 @@ router.post("/should-pay", async (req, res) => {
         await capturePaymentIntent(m.paymentIntentId);
         m.status = "paid";
         await m.save();
-        if (client?.email) {
-          sendEmailWithTemplateKey(client?.email, "missionCompletedClient", m);
-        }
-        if (provider?.email) {
-          sendEmailWithTemplateKey(
-            provider?.email,
-            "missionCompletedProvider",
-            m
-          );
-        }
+        const clientEmail = m?.type === "send" ? client?.email : m.recipient;
+        sendEmailWithTemplateKey(clientEmail, "missionCompletedClient", m);
+        const providerEmail =
+          m?.type === "send" ? m.recipient : provider?.email;
+        sendEmailWithTemplateKey(providerEmail, "missionCompletedProvider", m);
       }
     }
     res.status(200).json({
@@ -138,8 +130,11 @@ router.post("/check-disputes", async (req, res) => {
         await refundToCustomer(mD.paymentIntentId);
         mD.status = "refund";
         await mD.save();
-        sendEmailWithTemplateKey(provider?.email, "disputeNoAnswer", mD);
-        sendEmailWithTemplateKey(client?.email, "disputeReviewed", mD);
+        const clientEmail = m?.type === "send" ? client?.email : m.recipient;
+        const providerEmail =
+          m?.type === "send" ? m.recipient : provider?.email;
+        sendEmailWithTemplateKey(clientEmail, "disputeReviewed", mD);
+        sendEmailWithTemplateKey(providerEmail, "disputeNoAnswer", mD);
       }
     }
     res.status(200).json({ message: "Disputes checked successfully" });
