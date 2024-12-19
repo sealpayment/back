@@ -41,10 +41,11 @@ router.post(
         mission.paymentIntentId = session.payment_intent;
         const isMissionSent = mission.type === "send";
         const client = await User.findById(mission?.from_user_sub);
-        const clientEmail = m?.type === "send" ? client?.email : m.recipient;
+        const clientEmail =
+          mission?.type === "send" ? client?.email : m.recipient;
         const provider = await User.findById(mission?.to_user_sub);
         const providerEmail =
-          m?.type === "send" ? m.recipient : provider?.email;
+          m?.type === "send" ? mission.recipient : provider?.email;
         if (isMissionSent) {
           sendEmailWithTemplateKey(clientEmail, "missionCreated", mission);
           if (provider) {
