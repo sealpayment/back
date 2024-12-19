@@ -41,12 +41,15 @@ router.post(
         mission.paymentIntentId = session.payment_intent;
         const isMissionSent = mission.type === "send";
         const client = await User.findById(mission?.from_user_sub);
+        const clientEmail = m?.type === "send" ? client?.email : m.recipient;
         const provider = await User.findById(mission?.to_user_sub);
+        const providerEmail =
+          m?.type === "send" ? m.recipient : provider?.email;
         if (isMissionSent) {
-          sendEmailWithTemplateKey(client.email, "missionCreated", mission);
+          sendEmailWithTemplateKey(clientEmail, "missionCreated", mission);
           if (provider) {
             sendEmailWithTemplateKey(
-              provider.email,
+              providerEmail,
               "missionReceivedUser",
               mission
             );
@@ -58,8 +61,8 @@ router.post(
             );
           }
         } else {
-          sendEmailWithTemplateKey(client.email, "missionCreated", mission);
-          sendEmailWithTemplateKey(provider.email, "missionReceived", mission);
+          sendEmailWithTemplateKey(clientEmail, "missionCreated", mission);
+          sendEmailWithTemplateKey(providerEmail, "missionReceived", mission);
         }
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });
