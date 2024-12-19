@@ -51,7 +51,7 @@ export const sendEmailWithTemplateKey = async (
       .set(EXPRESS_MODE ? "millisecond" : "second", 0)
       .set("millisecond", 0);
 
-    const stripePaymentId = mission.paymentLink.split("/").pop();
+    const stripePaymentId = mission?.paymentLink?.split("/").pop();
     const variables = {
       client_first_name: client?.firstName,
       client_last_name: client?.lastName,
@@ -64,9 +64,12 @@ export const sendEmailWithTemplateKey = async (
       specifications: mission?.description,
       currency: currencyMap[mission?.currency],
       completed_date: completedDate.format("dddd, MMMM D, YYYY, h:mm A"),
-      payment_id: stripePaymentId,
       ...extras,
     };
+    if (stripePaymentId) {
+      variables.payment_id = stripePaymentId;
+    }
+    console.logo(template);
     const renderedTemplate = {};
     for (const [templateKey, templateValue] of Object.entries(template)) {
       renderedTemplate[templateKey] = mustache.render(templateValue, variables);

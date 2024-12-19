@@ -73,6 +73,13 @@ export default {
       "<strong>Mission deadline:</strong> {{completed_date}}<br>" +
       "<strong>Specifications: </strong>{{specifications}}<br>",
   },
+  forgotPassword: {
+    subject: "Reset Your Password",
+    title: "Reset Your Password",
+    body: "You’ve requested to reset your password. Click the button below to create a new password and access your account.",
+    action_title: "Reset Password",
+    action_link: `${WEBSITE_URL}/auth/reset-password?token={{ token }}`,
+  },
   signupConfirmEmail: {
     subject: "Please Confirm Your Email",
     title: "Please Confirm Your Email",
