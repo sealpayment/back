@@ -244,4 +244,19 @@ export default {
     action_title: "Open BindPay Dashboard",
     action_link: `${WEBSITE_URL}/mission`,
   },
+  paymentReleasedClient: {
+    subject: "Your payment has been released",
+    title: "Your payment has been released",
+    body:
+      "Dear {{ client_first_name }},<br>" +
+      "Your payment has been released to {{ provider_first_name }}.<br>" +
+      "Thank you for using BindPay to secure your payments.",
+    detail_title: "Payment Details",
+    details:
+      "<strong>Payment number:</strong> {{ mission_id }}<br>" +
+      "<strong>Destination:</strong> {{ provider_first_name }} {{ provider_last_name }} ({{ provider_email }})<br>" +
+      "<strong>Amount:</strong> {{ currency }}{{ amount }}<br>" +
+      "<strong>Mission deadline:</strong> {{completed_date}}<br>" +
+      "<strong>Specifications: </strong>{{specifications}}<br>",
+  },
 };

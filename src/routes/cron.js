@@ -57,12 +57,8 @@ router.post("/should-complete", async (req, res) => {
         m.status = "completed";
         await m.save();
         const client = await User.findById(m?.from_user_sub);
-        const provider = await User.findById(m?.to_user_sub);
         const clientEmail = m?.type === "send" ? client?.email : m.recipient;
         sendEmailWithTemplateKey(clientEmail, "missionCompletedClient", m);
-        const providerEmail =
-          m?.type === "send" ? m.recipient : provider?.email;
-        sendEmailWithTemplateKey(providerEmail, "missionCompletedProvider", m);
       }
     }
     res.status(200).json({
@@ -91,7 +87,7 @@ router.post("/should-pay", async (req, res) => {
         m.status = "paid";
         await m.save();
         const clientEmail = m?.type === "send" ? client?.email : m.recipient;
-        sendEmailWithTemplateKey(clientEmail, "missionCompletedClient", m);
+        sendEmailWithTemplateKey(clientEmail, "paymentReleasedClient", m);
         const providerEmail =
           m?.type === "send" ? m.recipient : provider?.email;
         sendEmailWithTemplateKey(providerEmail, "missionCompletedProvider", m);
