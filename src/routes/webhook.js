@@ -42,7 +42,7 @@ router.post(
         const isMissionSent = mission.type === "send";
         const client = await User.findById(mission?.from_user_sub);
         const clientEmail =
-          mission?.type === "send" ? client?.email : m.recipient;
+          mission?.type === "send" ? client?.email : mission.recipient;
         const provider = await User.findById(mission?.to_user_sub);
         const providerEmail =
           mission?.type === "send" ? mission.recipient : provider?.email;
