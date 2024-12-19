@@ -49,11 +49,7 @@ router.post(
         if (isMissionSent) {
           sendEmailWithTemplateKey(clientEmail, "missionCreated", mission);
           if (provider) {
-            sendEmailWithTemplateKey(
-              providerEmail,
-              "missionReceivedUser",
-              mission
-            );
+            sendEmailWithTemplateKey(providerEmail, "missionReceived", mission);
           } else {
             sendEmailWithTemplateKey(
               mission.recipient,
