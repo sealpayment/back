@@ -31,6 +31,10 @@ router.post(
       const missionId = session.metadata.missionId;
       try {
         const mission = await Mission.findById(missionId).exec();
+        if (mission.status !== "draft") {
+          response.status(200).json({ message: "Mission status invalid" });
+          return;
+        }
         const endDate = dayjs()
           .add(EXPRESS_MODE ? 7 : 168, EXPRESS_MODE ? "minute" : "hour")
           .set(EXPRESS_MODE ? "second" : "minute", 0)
