@@ -69,7 +69,6 @@ export const sendEmailWithTemplateKey = async (
     if (stripePaymentId) {
       variables.payment_id = stripePaymentId;
     }
-    console.logo(template);
     const renderedTemplate = {};
     for (const [templateKey, templateValue] of Object.entries(template)) {
       renderedTemplate[templateKey] = mustache.render(templateValue, variables);
