@@ -45,7 +45,7 @@ router.post(
           mission?.type === "send" ? client?.email : m.recipient;
         const provider = await User.findById(mission?.to_user_sub);
         const providerEmail =
-          m?.type === "send" ? mission.recipient : provider?.email;
+          mission?.type === "send" ? mission.recipient : provider?.email;
         if (isMissionSent) {
           sendEmailWithTemplateKey(clientEmail, "missionCreated", mission);
           if (provider) {
