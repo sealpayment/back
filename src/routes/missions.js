@@ -28,7 +28,7 @@ router.get("/", checkJwt, async ({ user }, res) => {
 
 router.get("/test-deployment", (req, res) => {
   return res.json({ 
-    message: "API is working correctly", 
+    message: "API is working correctly 2", 
     timestamp: new Date().toISOString() 
   });
 });
