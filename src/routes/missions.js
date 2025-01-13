@@ -26,6 +26,13 @@ router.get("/", checkJwt, async ({ user }, res) => {
   return res.json(missions);
 });
 
+router.get("/test-deployment", (req, res) => {
+  return res.json({ 
+    message: "API is working correctly", 
+    timestamp: new Date().toISOString() 
+  });
+});
+
 router.get("/:id", async (req, res) => {
   const missionId = req.params.id;
   const mission = await Mission.findById(missionId).exec();
