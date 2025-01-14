@@ -191,6 +191,17 @@ export async function getConnectedAccountBalance(connectedAccountId) {
   }
 }
 
+export function calculateStripeFees(amount, isEuropeanCard = true, isBritishCard = false) {
+  let percentageFee;
+  if (isBritishCard) {
+    percentageFee = 0.025; // 2.5% for British cards
+  } else {
+    percentageFee = isEuropeanCard ? 0.015 : 0.0325; // 1.5% for EU, 3.25% for non-EU
+  }
+  const fixedFee = 0.25;
+  return amount * percentageFee + fixedFee;
+}
+
 export async function capturePaymentIntent(paymentIntentId) {
   try {
     if (!paymentIntentId) {
@@ -201,7 +212,34 @@ export async function capturePaymentIntent(paymentIntentId) {
       console.log("Payment intent already captured");
       return;
     }
-    await stripe.paymentIntents.capture(paymentIntentId);
+    const amount = paymentIntent.amount / 100;
+    const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
+    const isBritishCard = paymentMethod?.card?.country === "GB";
+    const EU_COUNTRIES = new Set([
+      "AT", // Austria
+      "BE", // Belgium
+      "BG", // Bulgaria
+      "DE", // Germany
+      "ES", // Spain
+      "FR", // France
+      "IT", // Italy
+      "NL", // Netherlands
+      "PL", // Poland
+      "PT", // Portugal
+      "RO", // Romania
+      "SE"  // Sweden
+    ]);
+
+    const isEuropeanCard = Boolean(paymentMethod?.card?.country && EU_COUNTRIES.has(paymentMethod.card.country));
+    const stripeFees = calculateStripeFees(amount, isEuropeanCard, isBritishCard);
+    const targetTotalFeePercentage = 0.05;
+    const targetTotalFees = amount * targetTotalFeePercentage;
+    let applicationFee = Math.max(0, targetTotalFees - stripeFees);
+    applicationFee = Math.round(applicationFee * 100);
+    await stripe.paymentIntents.capture(paymentIntentId, {
+      application_fee_amount: applicationFee
+    });
+    // await stripe.paymentIntents.capture(paymentIntentId);
   } catch (error) {
     console.error(error);
     throw new Error("Error while capturing payment intent" + error.message);
