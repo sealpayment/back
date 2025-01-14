@@ -20,7 +20,7 @@ export const sendEmail = async (email, subject, html) => {
   });
 
   const emailSent = await transporter.sendMail({
-    from: `Bindpay <${process.env.SMTP_EMAIL}>`,
+    from: `Seal <${process.env.SMTP_EMAIL}>`,
     to: email,
     subject: subject,
     html: html,

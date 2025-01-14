@@ -9,7 +9,7 @@ export default {
       "We have received your dispute for your payment:<br><br>" +
       "<strong>What happens now?</strong><br><br>" +
       "1. The provider now has <strong>24 hours</strong> to answer the dispute and send information related to it.<br><br>" +
-      "2. Then the <strong>BindPay Dispute Team will settle the dispute</strong> within 12 hours. You will either get your money back or the payment will be released to the provider.<br><br>",
+      "2. Then the <strong>Seal Dispute Team will settle the dispute</strong> within 12 hours. You will either get your money back or the payment will be released to the provider.<br><br>",
     detail_title: "Payment details",
     details:
       "<strong>Payment number:</strong> {{ mission_id }}<br><br>" +
@@ -91,22 +91,22 @@ export default {
       "3. Enjoy a trusted platform for all your payment needs.<br><br>",
   },
   signupSuccess: {
-    subject: "Welcome to BindPay, secure payments made simple!",
-    title: "Welcome to BindPay!",
+    subject: "Welcome to Seal, secure payments made simple!",
+    title: "Welcome to Seal!",
     body:
       "Dear {{ first_name }}<br><br>" +
       "We're thrilled to have you on board!<br><br>" +
-      "You've taken the first step toward <strong>secure, hassle-free transactions</strong>. Whether you're managing a project or getting paid for your hard work, BindPay ensures your funds are protected every step of the way.<br><br>" +
+      "You've taken the first step toward <strong>secure, hassle-free transactions</strong>. Whether you're managing a project or getting paid for your hard work, Seal ensures your funds are protected every step of the way.<br><br>" +
       "Now, let's get started!",
     action_title: "Send or Ask Payment",
     action_link: `${WEBSITE_URL}/mission`,
   },
   paymentRequestUser: {
-    subject: "{{ provider_first_name }} requests payment via BindPay",
-    title: "BindPay payment request",
+    subject: "{{ provider_first_name }} requests payment via Seal",
+    title: "Seal payment request",
     body:
       "Dear {{ client_first_name }}<br><br>" +
-      "{{ provider_first_name }} has requested a BindPay payment to get their mission started.<br><br>",
+      "{{ provider_first_name }} has requested a Seal payment to get their mission started.<br><br>",
     detail_title: "Mission details",
     details:
       "<strong>Provider:</strong> {{ provider_first_name }} {{ provider_last_name }} ({{ provider_email }})<br><br>" +
@@ -116,14 +116,14 @@ export default {
     action_link: "https://checkout.stripe.com/c/pay/{{ payment_id }}",
   },
   paymentRequestAnonymous: {
-    subject: "{{ provider_first_name }} requests payment via BindPay",
-    title: "BindPay payment request",
+    subject: "{{ provider_first_name }} requests payment via Seal",
+    title: "Seal payment request",
     body:
-      "Dear future BindPay user,<br><br>" +
+      "Dear future Seal user,<br><br>" +
       "Nice to meet you!<br><br>" +
-      "{{ provider_first_name }} has requested a BindPay payment to get their mission started.<br><br>" +
-      "<strong>Why using BindPay?</strong><br><br>" +
-      "BindPay is a secure payment platform that holds funds until the job is completed as agreed, <strong>protecting both you and your provider</strong>.<br><br>" +
+      "{{ provider_first_name }} has requested a Seal payment to get their mission started.<br><br>" +
+      "<strong>Why using Seal?</strong><br><br>" +
+      "Seal is a secure payment platform that holds funds until the job is completed as agreed, <strong>protecting both you and your provider</strong>.<br><br>" +
       "<strong>No fees</strong> for the payer.<br><br>" +
       "Way more efficient than a <strong>contract</strong>.<br><br>" +
       "Provider must complete the mission <strong>within 5 days</strong>.<br><br>",
@@ -136,11 +136,11 @@ export default {
     action_link: `${WEBSITE_URL}/auth/register`,
   },
   missionCreated: {
-    subject: "Your payment is securely held by BindPay",
+    subject: "Your payment is securely held by Seal",
     title: "Your payment is now securely held",
     body:
       "Dear {{ provider_first_name }},<br><br>" +
-      "Congratulations, your payment is securely held by BindPay.<br><br>" +
+      "Congratulations, your payment is securely held by Seal.<br><br>" +
       "Your provider now has <strong>5 days to complete the mission</strong>.<br><br>",
     detail_title: "Payment Details",
     details:
@@ -153,11 +153,11 @@ export default {
     action_link: `${WEBSITE_URL}/mission`,
   },
   missionReceived: {
-    subject: "Your payment is securely held by BindPay",
+    subject: "Your payment is securely held by Seal",
     title: "Your payment is now securely held",
     body:
       "Dear {{ client_first_name }},<br><br>" +
-      "The funds are securely held by BindPay, you now have <strong>5 days to complete your mission</strong>.<br><br>" +
+      "The funds are securely held by Seal, you now have <strong>5 days to complete your mission</strong>.<br><br>" +
       "Make sure you complete the mission before the deadline and comply with the specifications.<br><br>",
     detail_title: "Mission Details",
     details:
@@ -166,7 +166,7 @@ export default {
       "<strong>Amount:</strong> {{ currency }}{{ amount }}<br><br>" +
       "<strong>Mission deadline:</strong> {{completed_date}}<br><br>" +
       "<strong>Specifications: </strong>{{specifications}}<br><br>",
-    action_title: "Open BindPay Dashboard",
+    action_title: "Open Seal Dashboard",
     action_link: `${WEBSITE_URL}/mission`,
   },
   missionReceivedAnonymous: {
@@ -174,11 +174,11 @@ export default {
     title:
       "Create your account and complete your mission to release the payment",
     body:
-      "Dear new BindPay user,<br><br>" +
+      "Dear new Seal user,<br><br>" +
       "Congratulations! {{ client_first_name }} has sent a you a payment of <strong>{{currency}}{{amount}}</strong>.<br><br>" +
-      "The funds are securely held by BindPay and will be released to your bank account once you complete the mission<br><br>." +
+      "The funds are securely held by Seal and will be released to your bank account once you complete the mission<br><br>." +
       "<strong>What's Next?</strong><br><br>" +
-      "<strong>1. Create your BindPay account</strong><br><br>" +
+      "<strong>1. Create your Seal account</strong><br><br>" +
       "2. Complete the mission before the deadline and make sure it aligns with the specifications.<br><br>" +
       "3. If you comply with the specifications, you will receive the money on your bank account within 7 days<br><br>.",
     detail_title: "Mission Details",
@@ -226,7 +226,7 @@ export default {
       "Dear {{ provider_first_name }},<br><br>" +
       "Congratulations on completing your mission!<br><br>" +
       "The funds are being processed and will be delivered to your bank account within <strong>7 days</strong>.<br><br>" +
-      "Thank you for your excellent work and for using BindPay to secure your payments.",
+      "Thank you for your excellent work and for using Seal to secure your payments.",
     detail_title: "Payment details:",
     details:
       "<strong>Payment number:</strong> {{ mission_id }}<br><br>" +
@@ -248,7 +248,7 @@ export default {
       "<strong>Amount:</strong> {{ currency }}{{ amount }}<br><br>" +
       "<strong>Mission deadline:</strong> {{completed_date}}<br><br>" +
       "<strong>Specifications: </strong>{{specifications}}<br><br>",
-    action_title: "Open BindPay Dashboard",
+    action_title: "Open Seal Dashboard",
     action_link: `${WEBSITE_URL}/mission`,
   },
   paymentReleasedClient: {
@@ -257,7 +257,7 @@ export default {
     body:
       "Dear {{ client_first_name }},<br><br>" +
       "Your payment has been released to {{ provider_first_name }}.<br><br>" +
-      "Thank you for using BindPay to secure your payments.",
+      "Thank you for using Seal to secure your payments.",
     detail_title: "Payment Details",
     details:
       "<strong>Payment number:</strong> {{ mission_id }}<br><br>" +
