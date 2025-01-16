@@ -90,7 +90,7 @@ router.patch("/update-profile", checkJwt, async ({ user, body }, res) => {
 
     if (body.password) {
       // First decrypt the password using CryptoJS
-      const bytes = CryptoJS.AES.decrypt(body.password, PUBLIC_AUTH_KEY);
+      const bytes = CryptoJS.AES.decrypt(body.password, process.env.PUBLIC_AUTH_KEY);
       const decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
 
       // Hash password using the same method as auth.js
