@@ -21,15 +21,15 @@ router.get("/", checkJwt, async ({ user }, res) => {
   const missions = await Mission.find({
     $or: [{ from_user_sub: user?._id }, { to_user_sub: user?._id }],
   })
-    .sort({ endDate: 1 })
+    .sort({ endDate: -1 })
     .exec();
   return res.json(missions);
 });
 
 router.get("/test-deployment", (req, res) => {
-  return res.json({ 
-    message: "API is working correctly 2", 
-    timestamp: new Date().toISOString() 
+  return res.json({
+    message: "API is working correctly 2",
+    timestamp: new Date().toISOString(),
   });
 });
 
