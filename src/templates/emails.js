@@ -91,15 +91,28 @@ export default {
       "3. Enjoy a trusted platform for all your payment needs.<br><br>",
   },
   signupSuccess: {
-    subject: "Welcome to Seal, secure payments made simple!",
-    title: "Welcome to Seal!",
+    subject: "Welcome to Seal - Please confirm your email",
+    title: "Welcome to Seal! Please confirm your email",
     body:
       "Dear {{ first_name }}<br><br>" +
       "We're thrilled to have you on board!<br><br>" +
+      "<strong>Please confirm your email address by clicking the button below:</strong><br><br>" +
       "You've taken the first step toward <strong>secure, hassle-free transactions</strong>. Whether you're managing a project or getting paid for your hard work, Seal ensures your funds are protected every step of the way.<br><br>" +
       "Now, let's get started!",
-    action_title: "Send or Ask Payment",
-    action_link: `${WEBSITE_URL}/mission`,
+    action_title: "Confirm Email",
+    action_link: `${WEBSITE_URL}/auth/confirm-email?token={{ token }}`,
+  },
+  confirmNewEmail: {
+    subject: "Seal - Please confirm your new email address",
+    title: "Please confirm your new email address",
+    body:
+      "Dear {{ first_name }}<br><br>" +
+      "We noticed you've requested to change your email address.<br><br>" +
+      "<strong>Please confirm your new email address by clicking the button below:</strong><br><br>" +
+      "This helps us ensure the security of your account. If you didn't request this change, please contact our support team immediately.<br><br>" +
+      "Thank you for using Seal!",
+    action_title: "Confirm New Email",
+    action_link: `${WEBSITE_URL}/auth/confirm-new-email?token={{ token }}&new-email={{ newEmail }}`,
   },
   paymentRequestUser: {
     subject: "{{ provider_first_name }} requests payment via Seal",

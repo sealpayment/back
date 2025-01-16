@@ -245,3 +245,13 @@ export async function capturePaymentIntent(paymentIntentId) {
     throw new Error("Error while capturing payment intent" + error.message);
   }
 }
+
+export async function updateConnectedAccountEmail(connectedAccountId, email) {
+  try {
+    return await stripe.accounts.update(connectedAccountId, {
+      email: email
+    });
+  } catch (error) {
+    throw new Error("Error updating Stripe account email: " + error.message);
+  }
+}

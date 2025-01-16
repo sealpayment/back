@@ -8,6 +8,7 @@ import { createConnectedAccount } from "../services/stripeServices.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 import { Token } from "../models/tokenModel.js";
+import { updateConnectedAccountEmail } from "../services/stripeServices.js";
 
 const router = express.Router();
 
@@ -32,6 +33,7 @@ router.post("/sign-in", async (req, res) => {
     });
     return res.status(200).json({
       accessToken: token,
+      isEmailVerified: user.emailVerified,
     });
   }
   res.status(400).json({ message: "Invalid credentials" });
@@ -87,6 +89,7 @@ router.post("/sign-up", async (req, res) => {
       {
         first_name: newUser.firstName,
         last_name: newUser.lastName,
+        token,
       }
     );
     return res.status(200).json({
@@ -151,24 +154,51 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-router.get("/confirm-email", async (req, res) => {
-  const { token } = req.query;
+router.post("/confirm-email", async (req, res) => {
+  const { token } = req.body;
   try {
     const { user_id } = getTokenPayload(token);
     const user = await User.findById(user_id);
     if (user) {
       user.emailVerified = true;
       await user.save();
-      sendEmailWithTemplateKey(
-        user.email,
-        "signupSuccess",
-        {},
-        {
-          first_name: user.firstName,
-          last_name: user.lastName,
-        }
-      );
-      return res.redirect(`${process.env.WEBSITE_URL}/mission`);
+      return res.status(200).json({
+        message: "Email confirmed",
+        isEmailVerified: user.emailVerified,
+      });
+    }
+  } catch (error) {
+    res.status(400).json({ message: "Invalid token" });
+  }
+});
+
+router.post("/confirm-new-email", async (req, res) => {
+  const { token, newEmail } = req.body;
+  try {
+    const { user_id } = getTokenPayload(token);
+    const user = await User.findById(user_id);
+
+    // Check if another user already has this email
+    const existingUser = await User.findOne({ email: newEmail });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "This email is already used by another account" });
+    }
+
+    if (user) {
+      user.email = newEmail;
+      await user.save();
+      await updateConnectedAccountEmail(user.connected_account_id, newEmail);
+      const token = generateAccessToken({
+        user_id: user.id,
+        user_email: newEmail,
+      });
+      return res.status(200).json({
+        accessToken: token,
+        message: "Email confirmed",
+        isEmailVerified: user.emailVerified,
+      });
     }
   } catch (error) {
     res.status(400).json({ message: "Invalid token" });
