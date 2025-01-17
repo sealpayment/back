@@ -152,7 +152,7 @@ export default {
     subject: "Your payment is securely held by Seal",
     title: "Your payment is now securely held",
     body:
-      "Dear {{ provider_first_name }},<br><br>" +
+      "Dear {{ client_first_name }},<br><br>" +
       "Congratulations, your payment is securely held by Seal.<br><br>" +
       "Your provider now has <strong>5 days to complete the mission</strong>.<br><br>",
     detail_title: "Payment Details",
@@ -169,7 +169,7 @@ export default {
     subject: "Your payment is securely held by Seal",
     title: "Your payment is now securely held",
     body:
-      "Dear {{ client_first_name }},<br><br>" +
+      "Dear {{ provider_first_name }},<br><br>" +
       "The funds are securely held by Seal, you now have <strong>5 days to complete your mission</strong>.<br><br>" +
       "Make sure you complete the mission before the deadline and comply with the specifications.<br><br>",
     detail_title: "Mission Details",
