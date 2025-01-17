@@ -202,7 +202,7 @@ export function calculateStripeFees(amount, isEuropeanCard = true, isBritishCard
   return amount * percentageFee + fixedFee;
 }
 
-export async function capturePaymentIntent(paymentIntentId) {
+export async function   capturePaymentIntent(paymentIntentId) {
   try {
     if (!paymentIntentId) {
       return;

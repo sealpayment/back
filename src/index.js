@@ -36,6 +36,10 @@ app.use(
 );
 app.use(cors(), json());
 
+app.get("/api/config/express-mode", (req, res) => {
+  res.json({ expressMode: EXPRESS_MODE });
+});
+
 app.use(
   express.json({
     limit: 1024 * 1024 * 1024,

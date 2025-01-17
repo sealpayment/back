@@ -56,8 +56,16 @@ export const sendEmailWithTemplateKey = async (
       client_first_name: client?.firstName,
       client_last_name: client?.lastName,
       client_email: client?.email,
-      provider_first_name: provider?.firstName,
+      provider_first_name: provider?.firstName
+        ? provider?.firstName
+        : mission?.recipient,
+      provider_destination: provider?.email
+        ? `<strong>Destination:</strong> ${provider?.firstName} ${provider?.lastName} (${provider?.email})<br><br>`
+        : `<strong>Destination:</strong> ${mission?.recipient}<br><br>`,
       provider_last_name: provider?.lastName,
+      provider_details: provider?.email
+        ? `<strong>Provider:</strong> ${provider?.firstName} ${provider?.lastName} (${provider?.email})<br><br>`
+        : `<strong>Provider:</strong> ${mission?.recipient}<br><br>`,
       provider_email: provider?.email,
       mission_id: mission?.id,
       amount: mission?.amount,

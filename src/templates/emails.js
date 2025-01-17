@@ -158,7 +158,7 @@ export default {
     detail_title: "Payment Details",
     details:
       "<strong>Payment number:</strong> {{ mission_id }}<br><br>" +
-      "<strong>Destination:</strong> {{ provider_first_name }} {{ provider_last_name }} ({{ provider_email }})<br><br>" +
+      "{{{ provider_destination }}}" +
       "<strong>Amount:</strong> {{ currency }}{{ amount }}<br><br>" +
       "<strong>Mission deadline:</strong> {{completed_date}}<br><br>" +
       "<strong>Specifications: </strong>{{specifications}}<br><br>",
@@ -225,7 +225,7 @@ export default {
     detail_title: "Mission details",
     details:
       "<strong>Payment number:</strong> {{ mission_id }}<br><br>" +
-      "<strong>Provider:</strong> {{ provider_first_name }} {{ provider_last_name }} ({{ provider_email }})<br><br>" +
+      "{{{ provider_details }}}" +
       "<strong>Amount:</strong> {{ currency }}{{ amount }}<br><br>" +
       "<strong>Specifications: </strong>{{specifications}}<br><br>" +
       "<strong>The specifications are not met?</strong>",
