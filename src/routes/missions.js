@@ -1,12 +1,14 @@
 import express from "express";
 import dayjs from "dayjs";
 import axios from "axios";
+import stripe from "stripe";
 
 import { checkJwt } from "../utils/auth.js";
 import {
   capturePaymentIntent,
   createStripePaymentLink,
   refundToCustomer,
+  createStripeCustomer,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
@@ -43,22 +45,51 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/create", checkJwt, async ({ user, body }, res) => {
-  const mission = body;
+  const { providerCountry, ...mission } = body;
   let newMission;
   try {
-    const recipientUser = await User.findOne({ email: mission.recipient });
+    let recipientUser = await User.findOne({ email: mission.recipient });
+
+    // If no recipient user exists, create a basic Stripe connected account
+    if (!recipientUser) {
+      const connectedAccount = await stripe.accounts.create({
+        type: "express",
+        country: providerCountry || "FR",
+        email: mission.recipient,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+      });
+
+      // Create a Stripe customer using the existing service
+      const customer = await createStripeCustomer({
+        email: mission.recipient
+      });
+
+      // Create a new user with both connected account and customer ID
+      recipientUser = new User({
+        email: mission.recipient,
+        connected_account_id: connectedAccount.id,
+        stripe_customer_id: customer.id,
+      });
+      await recipientUser.save();
+    }
+
     newMission = new Mission({
       ...mission,
       from_user_sub: user._id,
-      to_user_sub: recipientUser?._id,
+      to_user_sub: recipientUser._id,
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
     await newMission.save();
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error while creating the mission.", error });
+    console.error("Error creating mission:", error);
+    return res.status(500).json({
+      message: "Error while creating the mission.",
+      error: error.message,
+    });
   }
   res.status(201).json({
     missionId: newMission.id,

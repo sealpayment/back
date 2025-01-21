@@ -4,7 +4,11 @@ import bcrypt from "bcrypt";
 
 import { User } from "../models/userModel.js";
 import { generateAccessToken, getTokenPayload } from "../utils/helpers.js";
-import { createConnectedAccount } from "../services/stripeServices.js";
+import {
+  createConnectedAccountWithOnboarding,
+  createStripeCustomer,
+  deleteConnectedAccount,
+} from "../services/stripeServices.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 import { Token } from "../models/tokenModel.js";
@@ -40,7 +44,7 @@ router.post("/sign-in", async (req, res) => {
 });
 
 router.post("/sign-up", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, accountType } = req.body;
   let decryptedPassword;
   try {
     const bytes = CryptoJS.AES.decrypt(password, PUBLIC_AUTH_KEY);
@@ -51,52 +55,91 @@ router.post("/sign-up", async (req, res) => {
       .json({ message: "Erreur de décryptage du mot de passe" });
   }
   const user = await User.findOne({ email });
-  if (!user) {
-    const salt = bcrypt.genSaltSync(10);
-    const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
-    let connectedAccount;
-    try {
-      connectedAccount = await createConnectedAccount(req.body);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
-    }
-    const newUser = new User({
-      ...req.body,
-      password: passwordHash,
-      connected_account_id: connectedAccount.id,
-    });
-    await newUser.save();
 
-    const receivedMissions = await Mission.find({
-      recipient: email,
-    });
-    for (const mission of receivedMissions) {
-      if (mission.type === "ask") {
-        mission.from_user_sub = newUser.id;
-      } else {
-        mission.to_user_sub = newUser.id;
+  const salt = bcrypt.genSaltSync(10);
+  const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
+
+  let finalUser;
+  let accountLink;
+
+  try {
+    if (user) {
+      // User exists - handle updates
+      if (user.isRegistered) {
+        return res
+          .status(400)
+          .json({ message: "This email is already registered" });
       }
-      await mission.save();
+
+      if (user.country !== req.body.country) {
+        // Delete old Stripe Connected Account and create new one
+        await deleteConnectedAccount(user.stripeConnectedAccountId);
+        const { stripeConnectedAccountId, onboardingUrl } =
+          await createConnectedAccountWithOnboarding(req.body);
+        user.stripeConnectedAccountId = stripeConnectedAccountId;
+        accountLink = onboardingUrl;
+      } else if (user.stripeConnectedAccountId) {
+        accountLink = await createAccountLink(user.stripeConnectedAccountId);
+      }
+
+      Object.assign(user, {
+        ...req.body,
+        password: passwordHash,
+        isRegistered: true,
+      });
+      finalUser = user;
+    } else {
+      // New user case
+      let connectedAccountId;
+      let stripeCustomer;
+
+      if (accountType === "receiver" || accountType === "both") {
+        const [{ stripeConnectedAccountId, onboardingUrl }, customer] =
+          await Promise.all([
+            createConnectedAccountWithOnboarding(req.body),
+            createStripeCustomer(req.body),
+          ]);
+        connectedAccountId = stripeConnectedAccountId;
+        stripeCustomer = customer;
+        accountLink = onboardingUrl;
+      } else {
+        stripeCustomer = await createStripeCustomer(req.body);
+      }
+
+      finalUser = new User({
+        ...req.body,
+        password: passwordHash,
+        stripeConnectedAccountId: connectedAccountId,
+        stripeCustomerId: stripeCustomer.id,
+        isRegistered: true,
+      });
     }
+
+    await finalUser.save();
+
     const token = generateAccessToken({
-      user_id: newUser.id,
+      user_id: finalUser.id,
       user_email: email,
     });
+
     sendEmailWithTemplateKey(
-      newUser.email,
+      finalUser.email,
       "signupSuccess",
       {},
       {
-        first_name: newUser.firstName,
-        last_name: newUser.lastName,
+        first_name: finalUser.firstName,
+        last_name: finalUser.lastName,
         token,
       }
     );
+
     return res.status(200).json({
       accessToken: token,
+      onboardingUrl: accountLink,
     });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
-  res.status(400).json({ message: "This email is already used" });
 });
 
 router.post("/forgot-password", async (req, res) => {

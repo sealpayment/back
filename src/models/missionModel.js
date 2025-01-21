@@ -6,6 +6,7 @@ const MissionSchema = new Schema({
   type: { type: String, enum: ["ask", "send"] },
   from_user_sub: { type: String },
   to_user_sub: { type: String },
+  recipientHasAccount: { type: Boolean, default: false },
   recipient: {
     type: String,
     required: true,
@@ -41,10 +42,11 @@ const MissionSchema = new Schema({
       "paid",
       "error",
       "refund",
-      "disputed",
+      "disputed"
     ],
     default: "draft",
   },
+  statusMessage: { type: String },
   reminderSent: { type: Boolean, default: false },
   createdAt: { type: Date, default: dayjs().second(0).millisecond(0) },
 });

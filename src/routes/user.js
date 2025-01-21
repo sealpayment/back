@@ -62,10 +62,8 @@ router.patch("/update-profile", checkJwt, async ({ user, body }, res) => {
     const updates = {};
 
     if (body.email) {
-      console.log('body.email', body.email);
       // Check if email is already in use
       const existingUser = await User.findOne({ email: body.email });
-      console.log('existingUser', existingUser);
       if (existingUser) {
         return res
           .status(400)
@@ -90,7 +88,10 @@ router.patch("/update-profile", checkJwt, async ({ user, body }, res) => {
 
     if (body.password) {
       // First decrypt the password using CryptoJS
-      const bytes = CryptoJS.AES.decrypt(body.password, process.env.PUBLIC_AUTH_KEY);
+      const bytes = CryptoJS.AES.decrypt(
+        body.password,
+        process.env.PUBLIC_AUTH_KEY
+      );
       const decryptedPassword = bytes.toString(CryptoJS.enc.Utf8);
 
       // Hash password using the same method as auth.js
@@ -105,6 +106,19 @@ router.patch("/update-profile", checkJwt, async ({ user, body }, res) => {
 
     delete updatedUser.password;
     res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+router.post("/check-email", checkJwt, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    const emailExists = await User.findOne({ email: email });
+    res.status(200).json({ exists: !!emailExists });
   } catch (error) {
     res.status(500).send(error.message);
   }
