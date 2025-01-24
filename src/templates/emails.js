@@ -279,4 +279,33 @@ export default {
       "<strong>Mission deadline:</strong> {{completed_date}}<br><br>" +
       "<strong>Specifications: </strong>{{specifications}}<br><br>",
   },
+  inviteToPlatform: {
+    subject: "{{ inviter_name }} wants to work with you on Seal",
+    title: "Join Seal to start working together",
+    body:
+      "Dear future Seal user,<br><br>" +
+      "{{ inviter_name }} would like to work with you and wants to secure the payment through Seal.<br><br>" +
+      "<strong>Why use Seal?</strong><br><br>" +
+      "1. Get paid securely - funds are held safely until work is completed<br><br>" +
+      "2. No upfront fees - Seal only takes a small fee when you get paid<br><br>" +
+      "3. Protection for both parties - clear terms and dispute resolution if needed<br><br>" +
+      "4. Fast payments - receive funds in your bank account within 7 days of job completion<br><br>" +
+      "Create your account now to get started!",
+    action_title: "Create My Account",
+    action_link: `${WEBSITE_URL}/auth/register`,
+  },
+  setupBankAccount: {
+    subject: "{{ inviter_name }} wants to send you a payment",
+    title: "Set up your bank account to receive payments",
+    body:
+      "Dear {{ first_name }},<br><br>" +
+      "{{ inviter_name }} wants to send you a secure payment through Seal, but we noticed you haven't set up your bank account yet.<br><br>" +
+      "<strong>To receive payments, you need to:</strong><br><br>" +
+      "1. Go to your payment settings<br><br>" +
+      "2. Connect your bank account securely through Stripe<br><br>" +
+      "3. Start receiving payments within 7 days of completing work<br><br>" +
+      "It only takes a few minutes to set up!",
+    action_title: "Set Up Bank Account",
+    action_link: `${WEBSITE_URL}/mission`,
+  },
 };

@@ -4,11 +4,18 @@ import bcrypt from "bcrypt";
 
 import { User } from "../models/userModel.js";
 import { generateAccessToken, getTokenPayload } from "../utils/helpers.js";
-import { createConnectedAccount } from "../services/stripeServices.js";
+import {
+  createStripeCustomer,
+  deleteConnectedAccount,
+  createConnectedAccount,
+  createAccountLink,
+  cancelPaymentIntent,
+  updateConnectedAccountEmail,
+  updateStripeCustomerEmail,
+} from "../services/stripeServices.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 import { Token } from "../models/tokenModel.js";
-import { updateConnectedAccountEmail } from "../services/stripeServices.js";
 
 const router = express.Router();
 
@@ -40,7 +47,7 @@ router.post("/sign-in", async (req, res) => {
 });
 
 router.post("/sign-up", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, accountType } = req.body;
   let decryptedPassword;
   try {
     const bytes = CryptoJS.AES.decrypt(password, PUBLIC_AUTH_KEY);
@@ -51,52 +58,67 @@ router.post("/sign-up", async (req, res) => {
       .json({ message: "Erreur de décryptage du mot de passe" });
   }
   const user = await User.findOne({ email });
-  if (!user) {
-    const salt = bcrypt.genSaltSync(10);
-    const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
-    let connectedAccount;
-    try {
-      connectedAccount = await createConnectedAccount(req.body);
-    } catch (error) {
-      return res.status(400).json({ message: error.message });
+
+  const salt = bcrypt.genSaltSync(10);
+  const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
+
+  let finalUser;
+  let accountLink;
+
+  try {
+    let tempConnectedAccountId;
+    let stripeCustomer;
+
+    if (accountType === "receiver" || accountType === "both") {
+      const [{ stripeConnectedAccountId }, customer] = await Promise.all([
+        createConnectedAccount(req.body),
+        createStripeCustomer(req.body),
+      ]);
+      tempConnectedAccountId = stripeConnectedAccountId;
+      stripeCustomer = customer;
+    } else {
+      stripeCustomer = await createStripeCustomer(req.body);
     }
-    const newUser = new User({
+    finalUser = new User({
       ...req.body,
       password: passwordHash,
-      connected_account_id: connectedAccount.id,
+      stripeConnectedAccountId: tempConnectedAccountId,
+      stripeCustomerId: stripeCustomer.id,
+      isRegistered: true,
     });
-    await newUser.save();
 
-    const receivedMissions = await Mission.find({
-      recipient: email,
-    });
-    for (const mission of receivedMissions) {
-      if (mission.type === "ask") {
-        mission.from_user_sub = newUser.id;
-      } else {
-        mission.to_user_sub = newUser.id;
-      }
-      await mission.save();
+    await finalUser.save();
+    if (!user && (accountType === "receiver" || accountType === "both")) {
+      accountLink = await createAccountLink(
+        finalUser.stripeConnectedAccountId,
+        "/onboarding/stripe/incomplete",
+        `/onboarding/stripe/complete?userId=${finalUser._id}`
+      );
     }
+
     const token = generateAccessToken({
-      user_id: newUser.id,
+      user_id: finalUser.id,
       user_email: email,
     });
+
     sendEmailWithTemplateKey(
-      newUser.email,
+      finalUser.email,
       "signupSuccess",
       {},
       {
-        first_name: newUser.firstName,
-        last_name: newUser.lastName,
+        first_name: finalUser.firstName,
+        last_name: finalUser.lastName,
         token,
       }
     );
+
     return res.status(200).json({
       accessToken: token,
+      onboardingUrl: accountLink,
     });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
-  res.status(400).json({ message: "This email is already used" });
 });
 
 router.post("/forgot-password", async (req, res) => {
@@ -189,7 +211,16 @@ router.post("/confirm-new-email", async (req, res) => {
     if (user) {
       user.email = newEmail;
       await user.save();
-      await updateConnectedAccountEmail(user.connected_account_id, newEmail);
+      if (user.stripeConnectedAccountId) {
+        await updateConnectedAccountEmail(
+          user.stripeConnectedAccountId,
+          newEmail
+        );
+      }
+
+      if (user.stripeCustomerId) {
+        await updateStripeCustomerEmail(user.stripeCustomerId, newEmail);
+      }
       const token = generateAccessToken({
         user_id: user.id,
         user_email: newEmail,
@@ -201,6 +232,7 @@ router.post("/confirm-new-email", async (req, res) => {
       });
     }
   } catch (error) {
+    console.log("error in confirm new email", error);
     res.status(400).json({ message: "Invalid token" });
   }
 });

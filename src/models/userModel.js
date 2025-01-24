@@ -13,10 +13,18 @@ const UserSchema = new Schema({
   country: { type: String },
   postal: { type: String },
   dob: { type: String },
-  connected_account_id: { type: String },
+  stripeConnectedAccountId: { type: String },
+  stripeCustomerId: { type: String },
+  hasMissionPendingBankAccount: { type: Boolean, default: false },
   hasCompleted: {
     bankAccount: { type: Boolean, default: false },
     identity: { type: Boolean, default: false },
+  },
+  isRegistered: { type: Boolean, default: false },
+  accountType: {
+    type: String,
+    enum: ["sender", "receiver", "both"],
+    default: "sender",
   },
   createdAt: { type: Date, default: Date.now },
 });

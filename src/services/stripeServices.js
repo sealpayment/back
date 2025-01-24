@@ -8,7 +8,7 @@ const WEBSITE_URL = process.env.WEBSITE_URL;
 
 export async function createStripePaymentLink(mission, toUser) {
   try {
-    const fromUser = await User.findById(mission.from_user_sub);
+    const fromUser = await User.findById(mission.fromUserSub);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       payment_method_options: {
@@ -37,7 +37,7 @@ export async function createStripePaymentLink(mission, toUser) {
       payment_intent_data: {
         capture_method: "manual",
         transfer_data: {
-          destination: toUser?.connected_account_id,
+          destination: toUser?.stripeConnectedAccountId,
         },
       },
     });
@@ -50,23 +50,40 @@ export async function createStripePaymentLink(mission, toUser) {
   }
 }
 
+export async function createAccountLink(
+  stripeConnectedAccountId,
+  refreshPath = "/onboarding/stripe/incomplete",
+  returnPath = "/onboarding/stripe/complete"
+) {
+  try {
+    const accountLink = await stripe.accountLinks.create({
+      account: stripeConnectedAccountId,
+      refresh_url: `${WEBSITE_URL}${refreshPath}`,
+      return_url: `${WEBSITE_URL}${returnPath}`,
+      type: "account_onboarding",
+    });
+
+    return accountLink.url;
+  } catch (error) {
+    console.log(error.message);
+    throw new Error("Error creating account link: " + error.message);
+  }
+}
+
 export async function createConnectedAccount(userData) {
   try {
-    if (!userData.accountToken) {
-      throw new Error("Token de compte manquant");
-    }
     const connectedAccount = await stripe.accounts.create({
-      account_token: userData.accountToken,
-      type: "custom",
-      country: userData.country,
+      type: "express",
       email: userData.email,
-      business_profile: {
-        mcc: "7999",
-        product_description: "Prestation de services",
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
       },
-      requested_capabilities: ["card_payments", "transfers"],
+      country: userData.country,
     });
-    return connectedAccount;
+    return {
+      stripeConnectedAccountId: connectedAccount.id,
+    };
   } catch (error) {
     console.log(error);
     throw new Error(error.message);
@@ -87,9 +104,9 @@ export async function uploadIdentityDocument(file) {
   return stripeFile.id;
 }
 
-export async function updateConnectedAccount(connectedAccountId, token) {
+export async function updateConnectedAccount(stripeConnectedAccountId, token) {
   try {
-    return await stripe.accounts.update(connectedAccountId, {
+    return await stripe.accounts.update(stripeConnectedAccountId, {
       account_token: token,
     });
   } catch (error) {
@@ -99,10 +116,10 @@ export async function updateConnectedAccount(connectedAccountId, token) {
 
 export async function linkAccountToConnectedAccount(
   bankAccountId,
-  connectedAccountId
+  stripeConnectedAccountId
 ) {
   try {
-    await stripe.accounts.createExternalAccount(connectedAccountId, {
+    await stripe.accounts.createExternalAccount(stripeConnectedAccountId, {
       external_account: bankAccountId,
     });
   } catch (error) {
@@ -113,10 +130,10 @@ export async function linkAccountToConnectedAccount(
   }
 }
 
-export async function getConnectedBanks(connectedAccountId) {
+export async function getConnectedBanks(stripeConnectedAccountId) {
   try {
     const banks = await stripe.accounts.listExternalAccounts(
-      connectedAccountId,
+      stripeConnectedAccountId,
       {
         object: "bank_account",
       }
@@ -140,7 +157,10 @@ export async function refundToCustomer(paymentIntentId) {
   }
 }
 
-export async function payoutToConnectedBankAccount(connectedAccountId, amount) {
+export async function payoutToConnectedBankAccount(
+  stripeConnectedAccountId,
+  amount
+) {
   try {
     const payout = await stripe.payouts.create(
       {
@@ -148,7 +168,7 @@ export async function payoutToConnectedBankAccount(connectedAccountId, amount) {
         currency: "eur",
       },
       {
-        stripeAccount: connectedAccountId,
+        stripeAccount: stripeConnectedAccountId,
       }
     );
     return payout;
@@ -159,10 +179,10 @@ export async function payoutToConnectedBankAccount(connectedAccountId, amount) {
   }
 }
 
-export async function getConnectedAccountBalance(connectedAccountId) {
+export async function getConnectedAccountBalance(stripeConnectedAccountId) {
   try {
     const balance = await stripe.balance.retrieve({
-      stripeAccount: connectedAccountId,
+      stripeAccount: stripeConnectedAccountId,
     });
 
     const payouts = await stripe.payouts.list(
@@ -170,7 +190,7 @@ export async function getConnectedAccountBalance(connectedAccountId) {
         limit: 100,
       },
       {
-        stripeAccount: connectedAccountId,
+        stripeAccount: stripeConnectedAccountId,
       }
     );
 
@@ -191,7 +211,11 @@ export async function getConnectedAccountBalance(connectedAccountId) {
   }
 }
 
-export function calculateStripeFees(amount, isEuropeanCard = true, isBritishCard = false) {
+export function calculateStripeFees(
+  amount,
+  isEuropeanCard = true,
+  isBritishCard = false
+) {
   let percentageFee;
   if (isBritishCard) {
     percentageFee = 0.025; // 2.5% for British cards
@@ -202,7 +226,7 @@ export function calculateStripeFees(amount, isEuropeanCard = true, isBritishCard
   return amount * percentageFee + fixedFee;
 }
 
-export async function   capturePaymentIntent(paymentIntentId) {
+export async function capturePaymentIntent(paymentIntentId) {
   try {
     if (!paymentIntentId) {
       return;
@@ -213,7 +237,9 @@ export async function   capturePaymentIntent(paymentIntentId) {
       return;
     }
     const amount = paymentIntent.amount / 100;
-    const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
+    const paymentMethod = await stripe.paymentMethods.retrieve(
+      paymentIntent.payment_method
+    );
     const isBritishCard = paymentMethod?.card?.country === "GB";
     const EU_COUNTRIES = new Set([
       "AT", // Austria
@@ -227,17 +253,24 @@ export async function   capturePaymentIntent(paymentIntentId) {
       "PL", // Poland
       "PT", // Portugal
       "RO", // Romania
-      "SE"  // Sweden
+      "SE", // Sweden
     ]);
 
-    const isEuropeanCard = Boolean(paymentMethod?.card?.country && EU_COUNTRIES.has(paymentMethod.card.country));
-    const stripeFees = calculateStripeFees(amount, isEuropeanCard, isBritishCard);
+    const isEuropeanCard = Boolean(
+      paymentMethod?.card?.country &&
+        EU_COUNTRIES.has(paymentMethod.card.country)
+    );
+    const stripeFees = calculateStripeFees(
+      amount,
+      isEuropeanCard,
+      isBritishCard
+    );
     const targetTotalFeePercentage = 0.05;
     const targetTotalFees = amount * targetTotalFeePercentage;
     let applicationFee = Math.max(0, targetTotalFees - stripeFees);
     applicationFee = Math.round(applicationFee * 100);
     await stripe.paymentIntents.capture(paymentIntentId, {
-      application_fee_amount: applicationFee
+      application_fee_amount: applicationFee,
     });
     // await stripe.paymentIntents.capture(paymentIntentId);
   } catch (error) {
@@ -246,12 +279,123 @@ export async function   capturePaymentIntent(paymentIntentId) {
   }
 }
 
-export async function updateConnectedAccountEmail(connectedAccountId, email) {
+export async function updateConnectedAccountEmail(
+  stripeConnectedAccountId,
+  email
+) {
   try {
-    return await stripe.accounts.update(connectedAccountId, {
-      email: email
+    return await stripe.accounts.update(stripeConnectedAccountId, {
+      email: email,
     });
   } catch (error) {
     throw new Error("Error updating Stripe account email: " + error.message);
+  }
+}
+
+export async function createStripeCustomer(userData) {
+  try {
+    const customerData = {
+      email: userData.email,
+      ...(userData.firstName && {
+        name: `${userData.firstName} ${userData.lastName || ""}`.trim(),
+      }),
+    };
+    const customer = await stripe.customers.create(customerData);
+    return customer;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error creating Stripe customer: " + error.message);
+  }
+}
+
+export async function deleteConnectedAccount(stripeConnectedAccountId) {
+  try {
+    if (!stripeConnectedAccountId) {
+      return;
+    }
+    return await stripe.accounts.del(stripeConnectedAccountId);
+  } catch (error) {
+    console.error("Error deleting Stripe Connected Account:", error);
+    throw new Error(
+      "Error deleting Stripe Connected Account: " + error.message
+    );
+  }
+}
+
+export async function cancelPaymentIntent(paymentIntentId) {
+  try {
+    if (!paymentIntentId) {
+      return;
+    }
+    await stripe.paymentIntents.cancel(paymentIntentId);
+  } catch (error) {
+    console.error("Error canceling payment intent:", error);
+    throw new Error("Error canceling payment intent: " + error.message);
+  }
+}
+
+export async function checkAccountOnboardingStatus(stripeConnectedAccountId) {
+  try {
+    if (!stripeConnectedAccountId) {
+      throw new Error("Stripe Connected Account ID is required");
+    }
+
+    const account = await stripe.accounts.retrieve(stripeConnectedAccountId);
+
+    return {
+      isComplete: account.details_submitted,
+      transfersEnabled: account.capabilities?.transfers === "active",
+    };
+  } catch (error) {
+    console.error("Error checking account onboarding status:", error);
+    throw new Error(
+      "Error checking account onboarding status: " + error.message
+    );
+  }
+}
+
+export async function updateStripeCustomerEmail(stripeCustomerId, email) {
+  try {
+    if (!stripeCustomerId) {
+      return;
+    }
+    return await stripe.customers.update(stripeCustomerId, {
+      email: email,
+    });
+  } catch (error) {
+    console.error("Error updating Stripe customer email:", error);
+    throw new Error("Error updating Stripe customer email: " + error.message);
+  }
+}
+
+export async function getConnectedAccountDetails(stripeConnectedAccountId) {
+  try {
+    if (!stripeConnectedAccountId) {
+      throw new Error("Stripe Connected Account ID is required");
+    }
+
+    const account = await stripe.accounts.retrieve(stripeConnectedAccountId);
+
+    return {
+      bankAccounts: account.external_accounts?.data || [],
+      requirements: {
+        currentlyDue: account.requirements?.currently_due || [],
+        eventuallyDue: account.requirements?.eventually_due || [],
+        pendingVerification: account.requirements?.pending_verification || [],
+      },
+      payoutsEnabled: account.payouts_enabled,
+      detailsSubmitted: account.details_submitted,
+      metadata: account.metadata,
+      business: {
+        name: account.business_profile?.name,
+        url: account.business_profile?.url,
+        mcc: account.business_profile?.mcc,
+      },
+    };
+  } catch (error) {
+    console.error("Error retrieving connected account details:", error);
+    throw new Error(
+      "Error retrieving connected account details: " + error.message
+    );
   }
 }

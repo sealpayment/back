@@ -1,12 +1,15 @@
 import express from "express";
 import dayjs from "dayjs";
 import axios from "axios";
+import stripe from "stripe";
 
 import { checkJwt } from "../utils/auth.js";
 import {
   capturePaymentIntent,
   createStripePaymentLink,
   refundToCustomer,
+  createStripeCustomer,
+  createConnectedAccount
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
@@ -19,7 +22,7 @@ const router = express.Router();
 
 router.get("/", checkJwt, async ({ user }, res) => {
   const missions = await Mission.find({
-    $or: [{ from_user_sub: user?._id }, { to_user_sub: user?._id }],
+    $or: [{ fromUserSub: user?._id }, { toUserSub: user?._id }],
   })
     .sort({ endDate: -1 })
     .exec();
@@ -43,22 +46,44 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/create", checkJwt, async ({ user, body }, res) => {
-  const mission = body;
+  const { providerCountry, ...mission } = body;
   let newMission;
   try {
-    const recipientUser = await User.findOne({ email: mission.recipient });
+    let recipientUser = await User.findOne({ email: mission.recipient });
+
+    if (!recipientUser) {
+      const { stripeConnectedAccountId } = await createConnectedAccount({
+        email: mission.recipient,
+        country: providerCountry || "FR",
+      });
+      const customer = await createStripeCustomer({
+        email: mission.recipient,
+      });
+      recipientUser = new User({
+        email: mission.recipient,
+        stripeConnectedAccountId: stripeConnectedAccountId,
+        stripeCustomerId: customer.id,
+        hasMissionPendingBankAccount: true,
+      });
+      await recipientUser.save();
+
+    }
+
     newMission = new Mission({
       ...mission,
-      from_user_sub: user._id,
-      to_user_sub: recipientUser?._id,
+      fromUserSub: user._id,
+      toUserSub: recipientUser._id,
+
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
     await newMission.save();
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error while creating the mission.", error });
+    console.error("Error creating mission:", error);
+    return res.status(500).json({
+      message: "Error while creating the mission.",
+      error: error.message,
+    });
   }
   res.status(201).json({
     missionId: newMission.id,
@@ -72,8 +97,8 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     const recipientUser = await User.findOne({ email: mission.recipient });
     const newMission = new Mission({
       ...mission,
-      from_user_sub: recipientUser?._id,
-      to_user_sub: user._id,
+      fromUserSub: recipientUser?._id,
+      toUserSub: user._id,
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
@@ -110,7 +135,7 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
       return res.status(200).json({ message: "Mission deleted successfully." });
     }
     if (mission.paymentIntentId) {
-      const client = await User.findById(mission.from_user_sub);
+      const client = await User.findById(mission.fromUserSub);
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
       sendEmailWithTemplateKey(client.email, "missionCancelled", mission);
     }

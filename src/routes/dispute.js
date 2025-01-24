@@ -58,15 +58,15 @@ router.post(
       return res.status(500).json({ message: "Error while uploading file" });
     }
     mission.dispute.messages.push({
-      from_user_sub: user._id,
+      fromUserSub: user._id,
       message: body.message,
       file: handledFile,
     });
     mission.status = "disputed";
     mission.dispute.status = "open";
     await mission.save();
-    const client = await User.findById(mission.from_user_sub);
-    const provider = await User.findById(mission.to_user_sub);
+    const client = await User.findById(mission.fromUserSub);
+    const provider = await User.findById(mission.toUserSub);
     if (mission.dispute.messages.length === 1) {
       sendEmailWithTemplateKey(client.email, "disputeOpenedClient", mission);
       sendEmailWithTemplateKey(
@@ -104,8 +104,8 @@ router.post(
       await capturePaymentIntent(mission.paymentIntentId);
       mission.status = "paid";
     }
-    const client = await User.findById(mission.from_user_sub);
-    const provider = await User.findById(mission.to_user_sub);
+    const client = await User.findById(mission.fromUserSub);
+    const provider = await User.findById(mission.toUserSub);
     sendEmailWithTemplateKey(client.email, "disputeReviewed", mission, {
       outcome_description:
         body.action === "refund"
