@@ -8,6 +8,9 @@ import {
   createConnectedAccountWithOnboarding,
   createStripeCustomer,
   deleteConnectedAccount,
+  createConnectedAccount,
+  createAccountLink,
+  cancelPaymentIntent,
 } from "../services/stripeServices.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
@@ -63,59 +66,34 @@ router.post("/sign-up", async (req, res) => {
   let accountLink;
 
   try {
-    if (user) {
-      // User exists - handle updates
-      if (user.isRegistered) {
-        return res
-          .status(400)
-          .json({ message: "This email is already registered" });
-      }
+    let tempConnectedAccountId;
+    let stripeCustomer;
 
-      if (user.country !== req.body.country) {
-        // Delete old Stripe Connected Account and create new one
-        await deleteConnectedAccount(user.stripeConnectedAccountId);
-        const { stripeConnectedAccountId, onboardingUrl } =
-          await createConnectedAccountWithOnboarding(req.body);
-        user.stripeConnectedAccountId = stripeConnectedAccountId;
-        accountLink = onboardingUrl;
-      } else if (user.stripeConnectedAccountId) {
-        accountLink = await createAccountLink(user.stripeConnectedAccountId);
-      }
-
-      Object.assign(user, {
-        ...req.body,
-        password: passwordHash,
-        isRegistered: true,
-      });
-      finalUser = user;
+    if (accountType === "receiver" || accountType === "both") {
+      const [{ stripeConnectedAccountId }, customer] = await Promise.all([
+        createConnectedAccount(req.body),
+        createStripeCustomer(req.body),
+      ]);
+      tempConnectedAccountId = stripeConnectedAccountId;
+      stripeCustomer = customer;
     } else {
-      // New user case
-      let connectedAccountId;
-      let stripeCustomer;
-
-      if (accountType === "receiver" || accountType === "both") {
-        const [{ stripeConnectedAccountId, onboardingUrl }, customer] =
-          await Promise.all([
-            createConnectedAccountWithOnboarding(req.body),
-            createStripeCustomer(req.body),
-          ]);
-        connectedAccountId = stripeConnectedAccountId;
-        stripeCustomer = customer;
-        accountLink = onboardingUrl;
-      } else {
-        stripeCustomer = await createStripeCustomer(req.body);
-      }
-
-      finalUser = new User({
-        ...req.body,
-        password: passwordHash,
-        stripeConnectedAccountId: connectedAccountId,
-        stripeCustomerId: stripeCustomer.id,
-        isRegistered: true,
-      });
+      stripeCustomer = await createStripeCustomer(req.body);
     }
+    finalUser = new User({
+      ...req.body,
+      password: passwordHash,
+      stripeConnectedAccountId: tempConnectedAccountId,
+      stripeCustomerId: stripeCustomer.id,
+      isRegistered: true,
+    });
 
     await finalUser.save();
+    if (!user && (accountType === "receiver" || accountType === "both")) {
+      accountLink = await createAccountLink(
+        finalUser.stripeConnectedAccountId,
+        finalUser.id
+      );
+    }
 
     const token = generateAccessToken({
       user_id: finalUser.id,
@@ -232,7 +210,10 @@ router.post("/confirm-new-email", async (req, res) => {
     if (user) {
       user.email = newEmail;
       await user.save();
-      await updateConnectedAccountEmail(user.connected_account_id, newEmail);
+      await updateConnectedAccountEmail(
+        user.stripeConnectedAccountId,
+        newEmail
+      );
       const token = generateAccessToken({
         user_id: user.id,
         user_email: newEmail,

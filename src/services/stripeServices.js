@@ -8,7 +8,7 @@ const WEBSITE_URL = process.env.WEBSITE_URL;
 
 export async function createStripePaymentLink(mission, toUser) {
   try {
-    const fromUser = await User.findById(mission.from_user_sub);
+    const fromUser = await User.findById(mission.fromUserSub);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       payment_method_options: {
@@ -37,7 +37,7 @@ export async function createStripePaymentLink(mission, toUser) {
       payment_intent_data: {
         capture_method: "manual",
         transfer_data: {
-          destination: toUser?.connected_account_id,
+          destination: toUser?.stripeConnectedAccountId,
         },
       },
     });
@@ -50,12 +50,12 @@ export async function createStripePaymentLink(mission, toUser) {
   }
 }
 
-export async function createAccountLink(connectedAccountId) {
+export async function createAccountLink(stripeConnectedAccountId, userId) {
   try {
     const accountLink = await stripe.accountLinks.create({
-      account: connectedAccountId,
-      refresh_url: `${WEBSITE_URL}/mission`,
-      return_url: `${WEBSITE_URL}/mission`,
+      account: stripeConnectedAccountId,
+      refresh_url: `${WEBSITE_URL}/onboarding/stripe/incomplete`,
+      return_url: `${WEBSITE_URL}/onboarding/stripe/complete?userId=${userId}`,
       type: "account_onboarding",
     });
 
@@ -86,10 +86,13 @@ export async function createConnectedAccount(userData) {
   }
 }
 
-export async function createConnectedAccountWithOnboarding(userData) {
+export async function createConnectedAccountWithOnboarding(userData, userId) {
   try {
     const { stripeConnectedAccountId } = await createConnectedAccount(userData);
-    const onboardingUrl = await createAccountLink(stripeConnectedAccountId);
+    const onboardingUrl = await createAccountLink(
+      stripeConnectedAccountId,
+      userId
+    );
     return {
       stripeConnectedAccountId,
       onboardingUrl,
@@ -114,9 +117,9 @@ export async function uploadIdentityDocument(file) {
   return stripeFile.id;
 }
 
-export async function updateConnectedAccount(connectedAccountId, token) {
+export async function updateConnectedAccount(stripeConnectedAccountId, token) {
   try {
-    return await stripe.accounts.update(connectedAccountId, {
+    return await stripe.accounts.update(stripeConnectedAccountId, {
       account_token: token,
     });
   } catch (error) {
@@ -126,10 +129,10 @@ export async function updateConnectedAccount(connectedAccountId, token) {
 
 export async function linkAccountToConnectedAccount(
   bankAccountId,
-  connectedAccountId
+  stripeConnectedAccountId
 ) {
   try {
-    await stripe.accounts.createExternalAccount(connectedAccountId, {
+    await stripe.accounts.createExternalAccount(stripeConnectedAccountId, {
       external_account: bankAccountId,
     });
   } catch (error) {
@@ -140,10 +143,10 @@ export async function linkAccountToConnectedAccount(
   }
 }
 
-export async function getConnectedBanks(connectedAccountId) {
+export async function getConnectedBanks(stripeConnectedAccountId) {
   try {
     const banks = await stripe.accounts.listExternalAccounts(
-      connectedAccountId,
+      stripeConnectedAccountId,
       {
         object: "bank_account",
       }
@@ -167,7 +170,10 @@ export async function refundToCustomer(paymentIntentId) {
   }
 }
 
-export async function payoutToConnectedBankAccount(connectedAccountId, amount) {
+export async function payoutToConnectedBankAccount(
+  stripeConnectedAccountId,
+  amount
+) {
   try {
     const payout = await stripe.payouts.create(
       {
@@ -175,7 +181,7 @@ export async function payoutToConnectedBankAccount(connectedAccountId, amount) {
         currency: "eur",
       },
       {
-        stripeAccount: connectedAccountId,
+        stripeAccount: stripeConnectedAccountId,
       }
     );
     return payout;
@@ -186,10 +192,10 @@ export async function payoutToConnectedBankAccount(connectedAccountId, amount) {
   }
 }
 
-export async function getConnectedAccountBalance(connectedAccountId) {
+export async function getConnectedAccountBalance(stripeConnectedAccountId) {
   try {
     const balance = await stripe.balance.retrieve({
-      stripeAccount: connectedAccountId,
+      stripeAccount: stripeConnectedAccountId,
     });
 
     const payouts = await stripe.payouts.list(
@@ -197,7 +203,7 @@ export async function getConnectedAccountBalance(connectedAccountId) {
         limit: 100,
       },
       {
-        stripeAccount: connectedAccountId,
+        stripeAccount: stripeConnectedAccountId,
       }
     );
 
@@ -286,9 +292,12 @@ export async function capturePaymentIntent(paymentIntentId) {
   }
 }
 
-export async function updateConnectedAccountEmail(connectedAccountId, email) {
+export async function updateConnectedAccountEmail(
+  stripeConnectedAccountId,
+  email
+) {
   try {
-    return await stripe.accounts.update(connectedAccountId, {
+    return await stripe.accounts.update(stripeConnectedAccountId, {
       email: email,
     });
   } catch (error) {
@@ -312,16 +321,48 @@ export async function createStripeCustomer(userData) {
   }
 }
 
-export async function deleteConnectedAccount(connectedAccountId) {
+export async function deleteConnectedAccount(stripeConnectedAccountId) {
   try {
-    if (!connectedAccountId) {
+    if (!stripeConnectedAccountId) {
       return;
     }
-    return await stripe.accounts.del(connectedAccountId);
+    return await stripe.accounts.del(stripeConnectedAccountId);
   } catch (error) {
     console.error("Error deleting Stripe Connected Account:", error);
     throw new Error(
       "Error deleting Stripe Connected Account: " + error.message
+    );
+  }
+}
+
+export async function cancelPaymentIntent(paymentIntentId) {
+  try {
+    if (!paymentIntentId) {
+      return;
+    }
+    await stripe.paymentIntents.cancel(paymentIntentId);
+  } catch (error) {
+    console.error("Error canceling payment intent:", error);
+    throw new Error("Error canceling payment intent: " + error.message);
+  }
+}
+
+export async function checkAccountOnboardingStatus(stripeConnectedAccountId) {
+  try {
+    if (!stripeConnectedAccountId) {
+      throw new Error("Stripe Connected Account ID is required");
+    }
+
+    const account = await stripe.accounts.retrieve(stripeConnectedAccountId);
+
+    return {
+      isComplete: account.details_submitted,
+      transfersEnabled: account.capabilities?.transfers === "active",
+    };
+  } catch (error) {
+    console.error("Error checking account onboarding status:", error);
+    throw new Error(
+      "Error checking account onboarding status: " + error.message
     );
   }
 }

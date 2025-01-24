@@ -40,14 +40,15 @@ router.post(
           .set(EXPRESS_MODE ? "second" : "minute", 0)
           .set(EXPRESS_MODE ? "millisecond" : "second", 0)
           .set("millisecond", 0);
-        mission.status = "active";
+
+        const provider = await User.findById(mission?.toUserSub);
+        mission.status = 'active'
         mission.endDate = endDate;
         mission.paymentIntentId = session.payment_intent;
         const isMissionSent = mission.type === "send";
-        const client = await User.findById(mission?.from_user_sub);
+        const client = await User.findById(mission?.fromUserSub);
         const clientEmail =
           mission?.type === "send" ? client?.email : mission.recipient;
-        const provider = await User.findById(mission?.to_user_sub);
         const providerEmail =
           mission?.type === "send" ? mission.recipient : provider?.email;
         if (isMissionSent) {

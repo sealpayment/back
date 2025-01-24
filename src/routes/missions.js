@@ -9,6 +9,7 @@ import {
   createStripePaymentLink,
   refundToCustomer,
   createStripeCustomer,
+  createConnectedAccount
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
@@ -21,7 +22,7 @@ const router = express.Router();
 
 router.get("/", checkJwt, async ({ user }, res) => {
   const missions = await Mission.find({
-    $or: [{ from_user_sub: user?._id }, { to_user_sub: user?._id }],
+    $or: [{ fromUserSub: user?._id }, { toUserSub: user?._id }],
   })
     .sort({ endDate: -1 })
     .exec();
@@ -50,36 +51,29 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
   try {
     let recipientUser = await User.findOne({ email: mission.recipient });
 
-    // If no recipient user exists, create a basic Stripe connected account
     if (!recipientUser) {
-      const connectedAccount = await stripe.accounts.create({
-        type: "express",
-        country: providerCountry || "FR",
+      const { stripeConnectedAccountId } = await createConnectedAccount({
         email: mission.recipient,
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
+        country: providerCountry || "FR",
       });
-
-      // Create a Stripe customer using the existing service
       const customer = await createStripeCustomer({
-        email: mission.recipient
+        email: mission.recipient,
       });
-
-      // Create a new user with both connected account and customer ID
       recipientUser = new User({
         email: mission.recipient,
-        connected_account_id: connectedAccount.id,
-        stripe_customer_id: customer.id,
+        stripeConnectedAccountId: stripeConnectedAccountId,
+        stripeCustomerId: customer.id,
+        hasMissionPendingBankAccount: true,
       });
       await recipientUser.save();
+
     }
 
     newMission = new Mission({
       ...mission,
-      from_user_sub: user._id,
-      to_user_sub: recipientUser._id,
+      fromUserSub: user._id,
+      toUserSub: recipientUser._id,
+
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
@@ -103,8 +97,8 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     const recipientUser = await User.findOne({ email: mission.recipient });
     const newMission = new Mission({
       ...mission,
-      from_user_sub: recipientUser?._id,
-      to_user_sub: user._id,
+      fromUserSub: recipientUser?._id,
+      toUserSub: user._id,
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
@@ -141,7 +135,7 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
       return res.status(200).json({ message: "Mission deleted successfully." });
     }
     if (mission.paymentIntentId) {
-      const client = await User.findById(mission.from_user_sub);
+      const client = await User.findById(mission.fromUserSub);
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
       sendEmailWithTemplateKey(client.email, "missionCancelled", mission);
     }

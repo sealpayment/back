@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
   try {
-    await linkAccountToConnectedAccount(body.token, user.connected_account_id);
+    await linkAccountToConnectedAccount(body.token, user.stripeConnectedAccountId);
     user.hasCompleted.bankAccount = true;
     await user.save();
     res.json({
@@ -30,7 +30,7 @@ router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
 
 router.get("/bank-accounts", checkJwt, async ({ user }, res) => {
   try {
-    const bankAccounts = await getConnectedBanks(user.connected_account_id);
+    const bankAccounts = await getConnectedBanks(user.stripeConnectedAccountId);
     res.json(bankAccounts);
   } catch (error) {
     res.status(500).json({
@@ -44,7 +44,7 @@ router.post("/payout", checkJwt, async ({ user, body }, res) => {
   try {
     const { amount } = body;
     const payout = await payoutToConnectedBankAccount(
-      user.connected_account_id,
+      user.stripeConnectedAccountId,
       amount * 100
     );
     res.json(payout);
@@ -58,7 +58,7 @@ router.post("/payout", checkJwt, async ({ user, body }, res) => {
 
 router.get("/balance", checkJwt, async ({ user }, res) => {
   try {
-    const balance = await getConnectedAccountBalance(user.connected_account_id);
+    const balance = await getConnectedAccountBalance(user.stripeConnectedAccountId);
     res.json(balance);
   } catch (error) {
     res.status(500).json({

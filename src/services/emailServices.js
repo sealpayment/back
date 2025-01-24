@@ -43,8 +43,8 @@ export const sendEmailWithTemplateKey = async (
     const template = templates[key];
     const file = fs.readFileSync("./src/templates/generic-email.html", "utf8");
 
-    const client = await User.findById(mission?.from_user_sub);
-    const provider = await User.findById(mission?.to_user_sub);
+    const client = await User.findById(mission?.fromUserSub);
+    const provider = await User.findById(mission?.toUserSub);
     const completedDate = dayjs()
       .add(EXPRESS_MODE ? 5 : 120, EXPRESS_MODE ? "minute" : "hour")
       .set(EXPRESS_MODE ? "second" : "minute", 0)

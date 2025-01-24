@@ -27,7 +27,7 @@ router.post("/should-remind", async (req, res) => {
       if (EXPRESS_MODE ? diff < 3 : diff < 72) {
         m.reminderSent = true;
         await m.save();
-        const provider = await User.findById(m.to_user_sub);
+        const provider = await User.findById(m.toUserSub);
         const providerEmail =
           m?.type === "send" ? m.recipient : provider?.email;
         sendEmailWithTemplateKey(providerEmail, "missionReminder", m);
@@ -56,7 +56,7 @@ router.post("/should-complete", async (req, res) => {
       if (EXPRESS_MODE ? diff < 2 : diff < 48) {
         m.status = "completed";
         await m.save();
-        const client = await User.findById(m?.from_user_sub);
+        const client = await User.findById(m?.fromUserSub);
         const clientEmail = m?.type === "send" ? client?.email : m.recipient;
         sendEmailWithTemplateKey(clientEmail, "missionCompletedClient", m);
       }
@@ -81,8 +81,8 @@ router.post("/should-pay", async (req, res) => {
     for (const m of missions) {
       const diff = dayjs(m.endDate).diff(now, EXPRESS_MODE ? "minute" : "hour");
       if (EXPRESS_MODE ? diff < 1 : diff < 36) {
-        const client = await User.findById(m?.from_user);
-        const provider = await User.findById(m?.to_user);
+        const client = await User.findById(m?.fromUserSub);
+        const provider = await User.findById(m?.toUserSub);
         await capturePaymentIntent(m.paymentIntentId);
         m.status = "paid";
         await m.save();
@@ -118,11 +118,11 @@ router.post("/check-disputes", async (req, res) => {
     });
     for (const mD of disputed) {
       const providerHasResponded = mD.dispute.messages.some(
-        (message) => message.from_user_sub === mD.to_user_sub
+        (message) => message.fromUserSub === mD.toUserSub
       );
       if (!providerHasResponded) {
-        const client = await User.findById(mD?.from_user_sub);
-        const provider = await User.findById(mD?.to_user_sub);
+        const client = await User.findById(mD?.fromUserSub);
+        const provider = await User.findById(mD?.toUserSub);
         await refundToCustomer(mD.paymentIntentId);
         mD.status = "refund";
         await mD.save();

@@ -12,6 +12,8 @@ import {
 } from "../services/stripeServices.js";
 import { multerUpload } from "../middlewares/middleware.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
+import Mission from "../models/missionModel.js";
+import { checkAccountOnboardingStatus } from "../services/stripeServices.js";
 
 const router = express.Router();
 
@@ -45,7 +47,7 @@ router.post(
   async ({ user, body }, res) => {
     try {
       const connectedAccount = await updateConnectedAccount(
-        user.connected_account_id,
+        user.stripeConnectedAccountId,
         body.token
       );
       user.hasCompleted.identity = true;
@@ -118,7 +120,95 @@ router.post("/check-email", checkJwt, async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
     const emailExists = await User.findOne({ email: email });
-    res.status(200).json({ exists: !!emailExists });
+    res.status(200).json({
+      exists: !!emailExists,
+      hasBankAccount: emailExists
+        ? emailExists.hasCompleted.bankAccount
+        : false,
+    });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+router.post("/complete-account-link", async (req, res) => {
+  try {
+    console.log("start of complete");
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ message: "userId is required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const onboardingStatus = await checkAccountOnboardingStatus(
+      user.stripeConnectedAccountId
+    );
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        "hasCompleted.bankAccount": onboardingStatus.transfersEnabled,
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+router.post("/invite-to-platform", checkJwt, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Emaill is required" });
+    }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already has an account" });
+    }
+    await sendEmailWithTemplateKey(
+      email,
+      "inviteToPlatform",
+      {},
+      {
+        inviter_name: `${req.user.firstName} ${req.user.lastName}`,
+      }
+    );
+    res.status(200).json({ message: "Invitation email sent successfully" });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+router.post("/notify-missing-bank-account", checkJwt, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    await sendEmailWithTemplateKey(
+      email,
+      "setupBankAccount",
+      {},
+      {
+        first_name: user.firstName,
+        inviter_name: `${req.user.firstName} ${req.user.lastName}`,
+      }
+    );
+    res.status(200).json({ message: "Reminder email sent successfully" });
   } catch (error) {
     res.status(500).send(error.message);
   }

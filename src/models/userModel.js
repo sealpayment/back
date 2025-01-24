@@ -15,6 +15,7 @@ const UserSchema = new Schema({
   dob: { type: String },
   stripeConnectedAccountId: { type: String },
   stripeCustomerId: { type: String },
+  hasMissionPendingBankAccount: { type: Boolean, default: false },
   hasCompleted: {
     bankAccount: { type: Boolean, default: false },
     identity: { type: Boolean, default: false },
