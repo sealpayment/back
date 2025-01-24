@@ -8,13 +8,19 @@ import {
   getConnectedBanks,
   payoutToConnectedBankAccount,
   getConnectedAccountBalance,
+  createAccountLink,
+  getConnectedAccountDetails,
+  createConnectedAccount,
 } from "../services/stripeServices.js";
 
 const router = express.Router();
 
 router.post("/add-bank-account", checkJwt, async ({ user, body }, res) => {
   try {
-    await linkAccountToConnectedAccount(body.token, user.stripeConnectedAccountId);
+    await linkAccountToConnectedAccount(
+      body.token,
+      user.stripeConnectedAccountId
+    );
     user.hasCompleted.bankAccount = true;
     await user.save();
     res.json({
@@ -58,11 +64,72 @@ router.post("/payout", checkJwt, async ({ user, body }, res) => {
 
 router.get("/balance", checkJwt, async ({ user }, res) => {
   try {
-    const balance = await getConnectedAccountBalance(user.stripeConnectedAccountId);
+    const balance = await getConnectedAccountBalance(
+      user.stripeConnectedAccountId
+    );
     res.json(balance);
   } catch (error) {
     res.status(500).json({
       message: "Erreur lors de la récupération du solde",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/account-link", checkJwt, async ({ user, query }, res) => {
+  try {
+    const { refreshPath, returnPath } = query;
+    const accountLink = await createAccountLink(
+      user.stripeConnectedAccountId,
+      refreshPath,
+      returnPath
+    );
+    res.json({ url: accountLink });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error creating account link",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/account-details", checkJwt, async ({ user }, res) => {
+  try {
+    const accountDetails = await getConnectedAccountDetails(
+      user.stripeConnectedAccountId
+    );
+    res.json(accountDetails);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error retrieving account details",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/create-account", checkJwt, async ({ user }, res) => {
+  try {
+    if (user.stripeConnectedAccountId) {
+      return res.status(400).json({
+        message: "User already has a Stripe Connected Account",
+      });
+    }
+    const connectedAccount = await createConnectedAccount({
+      email: user.email,
+      country: user.country || "FR", // Default to France if not specified
+    });
+
+    user.stripeConnectedAccountId = connectedAccount.stripeConnectedAccountId;
+    await user.save();
+
+ 
+    res.json({
+      message: "Account created successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error creating Stripe account",
       error: error.message,
     });
   }

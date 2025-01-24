@@ -9,6 +9,7 @@ import {
   updateConnectedAccount,
   uploadIdentityDocument,
   updateConnectedAccountEmail,
+  updateStripeCustomerEmail,
 } from "../services/stripeServices.js";
 import { multerUpload } from "../middlewares/middleware.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
@@ -71,6 +72,20 @@ router.patch("/update-profile", checkJwt, async ({ user, body }, res) => {
           .status(400)
           .json({ message: "Email address is already in use" });
       }
+
+      // if (user.stripeConnectedAccountId) {
+      //   console.log("in connected account");
+      //   await updateConnectedAccountEmail(
+      //     user.stripeConnectedAccountId,
+      //     body.email
+      //   );
+      // }
+
+      // if (user.stripeCustomerId) {
+      //   console.log("in customer");
+      //   await updateStripeCustomerEmail(user.stripeCustomerId, body.email);
+      // }
+
       const token = generateAccessToken({
         user_id: user.id,
         user_email: user.email,
@@ -133,7 +148,6 @@ router.post("/check-email", checkJwt, async (req, res) => {
 
 router.post("/complete-account-link", async (req, res) => {
   try {
-    console.log("start of complete");
     const { userId } = req.body;
     if (!userId) {
       return res.status(400).json({ message: "userId is required" });
@@ -152,6 +166,9 @@ router.post("/complete-account-link", async (req, res) => {
       userId,
       {
         "hasCompleted.bankAccount": onboardingStatus.transfersEnabled,
+        ...(onboardingStatus.transfersEnabled && user.accountType === "sender"
+          ? { accountType: "both" }
+          : {}),
       },
       { new: true }
     );

@@ -5,17 +5,17 @@ import bcrypt from "bcrypt";
 import { User } from "../models/userModel.js";
 import { generateAccessToken, getTokenPayload } from "../utils/helpers.js";
 import {
-  createConnectedAccountWithOnboarding,
   createStripeCustomer,
   deleteConnectedAccount,
   createConnectedAccount,
   createAccountLink,
   cancelPaymentIntent,
+  updateConnectedAccountEmail,
+  updateStripeCustomerEmail,
 } from "../services/stripeServices.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 import { Token } from "../models/tokenModel.js";
-import { updateConnectedAccountEmail } from "../services/stripeServices.js";
 
 const router = express.Router();
 
@@ -91,7 +91,8 @@ router.post("/sign-up", async (req, res) => {
     if (!user && (accountType === "receiver" || accountType === "both")) {
       accountLink = await createAccountLink(
         finalUser.stripeConnectedAccountId,
-        finalUser.id
+        "/onboarding/stripe/incomplete",
+        `/onboarding/stripe/complete?userId=${finalUser._id}`
       );
     }
 
@@ -210,10 +211,16 @@ router.post("/confirm-new-email", async (req, res) => {
     if (user) {
       user.email = newEmail;
       await user.save();
-      await updateConnectedAccountEmail(
-        user.stripeConnectedAccountId,
-        newEmail
-      );
+      if (user.stripeConnectedAccountId) {
+        await updateConnectedAccountEmail(
+          user.stripeConnectedAccountId,
+          newEmail
+        );
+      }
+
+      if (user.stripeCustomerId) {
+        await updateStripeCustomerEmail(user.stripeCustomerId, newEmail);
+      }
       const token = generateAccessToken({
         user_id: user.id,
         user_email: newEmail,
@@ -225,6 +232,7 @@ router.post("/confirm-new-email", async (req, res) => {
       });
     }
   } catch (error) {
+    console.log("error in confirm new email", error);
     res.status(400).json({ message: "Invalid token" });
   }
 });

@@ -50,18 +50,22 @@ export async function createStripePaymentLink(mission, toUser) {
   }
 }
 
-export async function createAccountLink(stripeConnectedAccountId, userId) {
+export async function createAccountLink(
+  stripeConnectedAccountId,
+  refreshPath = "/onboarding/stripe/incomplete",
+  returnPath = "/onboarding/stripe/complete"
+) {
   try {
     const accountLink = await stripe.accountLinks.create({
       account: stripeConnectedAccountId,
-      refresh_url: `${WEBSITE_URL}/onboarding/stripe/incomplete`,
-      return_url: `${WEBSITE_URL}/onboarding/stripe/complete?userId=${userId}`,
+      refresh_url: `${WEBSITE_URL}${refreshPath}`,
+      return_url: `${WEBSITE_URL}${returnPath}`,
       type: "account_onboarding",
     });
 
     return accountLink.url;
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
     throw new Error("Error creating account link: " + error.message);
   }
 }
@@ -79,23 +83,6 @@ export async function createConnectedAccount(userData) {
     });
     return {
       stripeConnectedAccountId: connectedAccount.id,
-    };
-  } catch (error) {
-    console.log(error);
-    throw new Error(error.message);
-  }
-}
-
-export async function createConnectedAccountWithOnboarding(userData, userId) {
-  try {
-    const { stripeConnectedAccountId } = await createConnectedAccount(userData);
-    const onboardingUrl = await createAccountLink(
-      stripeConnectedAccountId,
-      userId
-    );
-    return {
-      stripeConnectedAccountId,
-      onboardingUrl,
     };
   } catch (error) {
     console.log(error);
@@ -363,6 +350,52 @@ export async function checkAccountOnboardingStatus(stripeConnectedAccountId) {
     console.error("Error checking account onboarding status:", error);
     throw new Error(
       "Error checking account onboarding status: " + error.message
+    );
+  }
+}
+
+export async function updateStripeCustomerEmail(stripeCustomerId, email) {
+  try {
+    if (!stripeCustomerId) {
+      return;
+    }
+    return await stripe.customers.update(stripeCustomerId, {
+      email: email,
+    });
+  } catch (error) {
+    console.error("Error updating Stripe customer email:", error);
+    throw new Error("Error updating Stripe customer email: " + error.message);
+  }
+}
+
+export async function getConnectedAccountDetails(stripeConnectedAccountId) {
+  try {
+    if (!stripeConnectedAccountId) {
+      throw new Error("Stripe Connected Account ID is required");
+    }
+
+    const account = await stripe.accounts.retrieve(stripeConnectedAccountId);
+
+    return {
+      bankAccounts: account.external_accounts?.data || [],
+      requirements: {
+        currentlyDue: account.requirements?.currently_due || [],
+        eventuallyDue: account.requirements?.eventually_due || [],
+        pendingVerification: account.requirements?.pending_verification || [],
+      },
+      payoutsEnabled: account.payouts_enabled,
+      detailsSubmitted: account.details_submitted,
+      metadata: account.metadata,
+      business: {
+        name: account.business_profile?.name,
+        url: account.business_profile?.url,
+        mcc: account.business_profile?.mcc,
+      },
+    };
+  } catch (error) {
+    console.error("Error retrieving connected account details:", error);
+    throw new Error(
+      "Error retrieving connected account details: " + error.message
     );
   }
 }
