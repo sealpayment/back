@@ -6,7 +6,6 @@ const MissionSchema = new Schema({
   type: { type: String, enum: ["ask", "send"] },
   fromUserSub: { type: String },
   toUserSub: { type: String },
-  recipientHasAccount: { type: Boolean, default: false },
   recipient: {
     type: String,
     required: true,
