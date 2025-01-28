@@ -58,6 +58,11 @@ router.post("/sign-up", async (req, res) => {
       .json({ message: "Erreur de décryptage du mot de passe" });
   }
   const user = await User.findOne({ email });
+  if (user) {
+    return res
+      .status(400)
+      .json({ message: "This email is already registered" });
+  }
 
   const salt = bcrypt.genSaltSync(10);
   const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
