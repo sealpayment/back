@@ -58,6 +58,11 @@ router.post("/sign-up", async (req, res) => {
       .json({ message: "Erreur de décryptage du mot de passe" });
   }
   const user = await User.findOne({ email });
+  if (user) {
+    return res
+      .status(400)
+      .json({ message: "This email is already registered" });
+  }
 
   const salt = bcrypt.genSaltSync(10);
   const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
@@ -89,11 +94,11 @@ router.post("/sign-up", async (req, res) => {
 
     await finalUser.save();
     if (!user && (accountType === "receiver" || accountType === "both")) {
-      accountLink = await createAccountLink(
-        finalUser.stripeConnectedAccountId,
-        "/onboarding/stripe/incomplete",
-        `/onboarding/stripe/complete?userId=${finalUser._id}`
-      );
+      // accountLink = await createAccountLink(
+      //   finalUser.stripeConnectedAccountId,
+      //   "/onboarding/stripe/incomplete",
+      //   `/onboarding/stripe/complete?userId=${finalUser._id}`
+      // );
     }
 
     const token = generateAccessToken({
@@ -114,7 +119,7 @@ router.post("/sign-up", async (req, res) => {
 
     return res.status(200).json({
       accessToken: token,
-      onboardingUrl: accountLink,
+      // onboardingUrl: accountLink,
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });

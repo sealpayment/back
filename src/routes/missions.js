@@ -9,8 +9,11 @@ import {
   createStripePaymentLink,
   refundToCustomer,
   createStripeCustomer,
-  createConnectedAccount
+  createConnectedAccount,
 } from "../services/stripeServices.js";
+import FormData from "form-data";
+import Mailgun from "mailgun.js";
+
 import Mission from "../models/missionModel.js";
 import { sendEmailWithTemplateKey } from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
@@ -66,14 +69,12 @@ router.post("/create", checkJwt, async ({ user, body }, res) => {
         hasMissionPendingBankAccount: true,
       });
       await recipientUser.save();
-
     }
 
     newMission = new Mission({
       ...mission,
       fromUserSub: user._id,
       toUserSub: recipientUser._id,
-
     });
     const link = await createStripePaymentLink(newMission, recipientUser);
     newMission.paymentLink = link;
@@ -153,22 +154,30 @@ import { APIClient, SendEmailRequest } from "customerio-node";
 const client = new APIClient("270f444061d559d5a7c6094282e63a90");
 
 router.post("/test", async (req, res) => {
-  const request = new SendEmailRequest({
-    transactional_message_id: 2,
-    identifiers: {
-      id: "tristan.luong@gmail.com",
-    },
-    to: "tristan.luong@gmail.com",
-    message_data: {
-      first_name: "Tristan",
-    },
+  const mailgun = new Mailgun(FormData);
+  const mg = mailgun.client({
+    username: "api",
+    key: process.env.MAILGUN_API_KEY,
+    url: process.env.MAILGUN_API_URL,
   });
 
-  client
-    .sendEmail(request)
-    .then((res) => console.log(res))
-    .catch((err) => console.log(err.statusCode, err.message));
-  res.status(200).json({ message: "Email sent successfully" });
+  try {
+    const data = await mg.messages.create(process.env.MAILGUN_DOMAIN, {
+      from: `Seal Payment${process.env.EMAIL_FROM_ADDRESS}`,
+      to: ["benoitpayet1989@gmail.com"],
+      subject: "Hello Benoit",
+      
+      // html: "<h1>This is a test email</h1><p>Testing Mailgun integration</p>",
+      template: "disputeopenedclient",
+      "h:X-Mailgun-Variables": JSON.stringify({
+        test: "test",
+      }),
+    });
+    res.status(200).json({ message: "Email sent successfully" });
+  } catch (error) {
+    console.error("Mailgun error:", error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
 });
 
 export default router;
