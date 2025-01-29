@@ -94,11 +94,11 @@ router.post("/sign-up", async (req, res) => {
 
     await finalUser.save();
     if (!user && (accountType === "receiver" || accountType === "both")) {
-      accountLink = await createAccountLink(
-        finalUser.stripeConnectedAccountId,
-        "/onboarding/stripe/incomplete",
-        `/onboarding/stripe/complete?userId=${finalUser._id}`
-      );
+      // accountLink = await createAccountLink(
+      //   finalUser.stripeConnectedAccountId,
+      //   "/onboarding/stripe/incomplete",
+      //   `/onboarding/stripe/complete?userId=${finalUser._id}`
+      // );
     }
 
     const token = generateAccessToken({
@@ -119,7 +119,7 @@ router.post("/sign-up", async (req, res) => {
 
     return res.status(200).json({
       accessToken: token,
-      onboardingUrl: accountLink,
+      // onboardingUrl: accountLink,
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });

@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import Mission from "../models/missionModel.js";
 import { createConnectedAccount } from "../services/stripeServices.js";
 import { User } from "../models/userModel.js";
-import { sendEmailWithTemplateKey } from "../services/emailServices.js";
+import { sendEmailWithMailgunTemplate } from "../services/emailServices.js";
 import { currencyMap } from "../utils/helpers.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -27,6 +27,7 @@ router.post(
       return;
     }
     if (event.type === "checkout.session.completed") {
+      console.log('in webhooks');
       const session = event.data.object;
       const missionId = session.metadata.missionId;
       try {
@@ -42,7 +43,7 @@ router.post(
           .set("millisecond", 0);
 
         const provider = await User.findById(mission?.toUserSub);
-        mission.status = 'active'
+        mission.status = "active";
         mission.endDate = endDate;
         mission.paymentIntentId = session.payment_intent;
         const isMissionSent = mission.type === "send";
@@ -52,19 +53,19 @@ router.post(
         const providerEmail =
           mission?.type === "send" ? mission.recipient : provider?.email;
         if (isMissionSent) {
-          sendEmailWithTemplateKey(clientEmail, "missionCreated", mission);
-          if (provider) {
-            sendEmailWithTemplateKey(providerEmail, "missionReceived", mission);
-          } else {
-            sendEmailWithTemplateKey(
-              mission.recipient,
-              "missionReceivedAnonymous",
-              mission
-            );
-          }
+          sendEmailWithMailgunTemplate(clientEmail, "missioncreated", mission);
+          sendEmailWithMailgunTemplate(
+            providerEmail,
+            "missionreceived",
+            mission
+          );
         } else {
-          sendEmailWithTemplateKey(clientEmail, "missionCreated", mission);
-          sendEmailWithTemplateKey(providerEmail, "missionReceived", mission);
+          sendEmailWithMailgunTemplate(clientEmail, "missioncreated", mission);
+          sendEmailWithMailgunTemplate(
+            providerEmail,
+            "missionreceived",
+            mission
+          );
         }
         await mission.save();
         response.status(200).json({ message: "Mission is now active" });

@@ -182,28 +182,6 @@ export default {
     action_title: "Open Seal Dashboard",
     action_link: `${WEBSITE_URL}/mission`,
   },
-  missionReceivedAnonymous: {
-    subject: "You have received a payment from {{ client_first_name }}",
-    title:
-      "Create your account and complete your mission to release the payment",
-    body:
-      "Dear new Seal user,<br><br>" +
-      "Congratulations! {{ client_first_name }} has sent a you a payment of <strong>{{currency}}{{amount}}</strong>.<br><br>" +
-      "The funds are securely held by Seal and will be released to your bank account once you complete the mission<br><br>." +
-      "<strong>What's Next?</strong><br><br>" +
-      "<strong>1. Create your Seal account</strong><br><br>" +
-      "2. Complete the mission before the deadline and make sure it aligns with the specifications.<br><br>" +
-      "3. If you comply with the specifications, you will receive the money on your bank account within 7 days<br><br>.",
-    detail_title: "Mission Details",
-    details:
-      "<strong>Payment number:</strong> {{ mission_id }}<br><br>" +
-      "<strong>Payer:</strong> {{ client_first_name }} {{ client_last_name }} ({{ client_email }})<br><br>" +
-      "<strong>Amount:</strong> {{ currency }}{{ amount }}<br><br>" +
-      "<strong>Mission deadline:</strong> {{completed_date}}<br><br>" +
-      "<strong>Specifications: </strong>{{specifications}}",
-    action_title: "Create my account",
-    action_link: `${WEBSITE_URL}/auth/register`,
-  },
   missionCancelled: {
     subject: "Your Mission Has Been Cancelled",
     title: "Your Mission Has Been Cancelled",
