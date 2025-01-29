@@ -30,7 +30,6 @@ export const sendEmail = async (email, subject, html) => {
   return emailSent;
 };
 
-
 const EXPRESS_MODE = process.env.EXPRESS_MODE === "true";
 
 export const sendEmailWithTemplateKey = async (
@@ -152,5 +151,3 @@ export const sendEmailWithMailgunTemplate = async (
     console.log(error);
   }
 };
-
-
