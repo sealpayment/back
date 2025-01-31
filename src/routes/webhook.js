@@ -27,7 +27,6 @@ router.post(
       return;
     }
     if (event.type === "checkout.session.completed") {
-      console.log('in webhooks');
       const session = event.data.object;
       const missionId = session.metadata.missionId;
       try {
