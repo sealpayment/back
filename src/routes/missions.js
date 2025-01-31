@@ -105,10 +105,17 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     newMission.paymentLink = link;
     await newMission.save();
     try {
+      const stripePaymentId = newMission?.paymentLink?.split("/").pop();
+
       sendEmailWithMailgunTemplate(
         mission.recipient,
         recipientUser?._id ? "paymentrequestuser" : "paymentrequestanonymous",
-        newMission
+        newMission,
+        {
+          action_link: recipientUser?._id
+            ? `https://checkout.stripe.com/c/pay/${stripePaymentId}`
+            : `${process.env.WEBSITE_URL}/auth/register`,
+        }
       );
     } catch (error) {
       console.log("Error while sending email", error);
@@ -138,7 +145,9 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
     if (mission.paymentIntentId) {
       const client = await User.findById(mission.fromUserSub);
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
-      sendEmailWithMailgunTemplate(client.email, "missioncancelled", mission);
+      sendEmailWithMailgunTemplate(client.email, "missioncancelled", mission, {
+        action_link: `${process.env.WEBSITE_URL}/mission`,
+      });
     }
     mission.status = "refund";
     await mission.save();
@@ -166,7 +175,7 @@ router.post("/test", async (req, res) => {
       from: `Seal Payment${process.env.EMAIL_FROM_ADDRESS}`,
       to: ["benoitpayet1989@gmail.com"],
       subject: "Hello Benoit",
-      
+
       // html: "<h1>This is a test email</h1><p>Testing Mailgun integration</p>",
       template: "disputeopenedclient",
       "h:X-Mailgun-Variables": JSON.stringify({

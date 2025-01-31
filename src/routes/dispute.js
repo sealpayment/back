@@ -69,17 +69,34 @@ router.post(
     const provider = await User.findById(mission.toUserSub);
     if (mission.dispute.messages.length === 1) {
       sendEmailWithMailgunTemplate(client.email, "disputeopenedclient", mission, {
-        action_link: `${WEBSITE_URL}/mission/dispute/{{mission_id}}`,
+        action_link: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
       });
       sendEmailWithMailgunTemplate(
         provider.email,
         "disputeopenedprovider",
-        mission
+        mission,
+        {
+          action_link: `${process.env.WEBSITE_URL}/mission/dispute/${mission.id}`,
+        }
       );
     }
     if (mission.dispute.messages.length === 2) {
-      sendEmailWithMailgunTemplate(provider.email, "disputeanswered", mission);
-      sendEmailWithMailgunTemplate(client.email, "disputeanswered", mission);
+      sendEmailWithMailgunTemplate(
+        provider.email,
+        "disputeanswered",
+        mission,
+        {
+          action_link: `${process.env.WEBSITE_URL}/mission}`,
+        }
+      );
+      sendEmailWithMailgunTemplate(
+        client.email,
+        "disputeanswered",
+        mission,
+        {
+          action_link: `${process.env.WEBSITE_URL}/mission`,
+        }
+      );
     }
     return res.status(200).json({
       message: "Dispute updated successfully.",
@@ -113,12 +130,14 @@ router.post(
         body.action === "refund"
           ? "Funds have been refunded to your payment method."
           : "Funds have been released to the provider.",
+      action_link: `${process.env.WEBSITE_URL}/mission`,
     });
     sendEmailWithMailgunTemplate(provider.email, "disputereviewed", mission, {
       outcome_description:
         body.action === "refund"
           ? "Funds have been refunded to the client's payment method."
           : "Funds have been released to you.",
+      action_link: `${process.env.WEBSITE_URL}/mission`,
     });
     mission.dispute.status = "completed";
     await mission.save();

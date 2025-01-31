@@ -52,18 +52,28 @@ router.post(
         const providerEmail =
           mission?.type === "send" ? mission.recipient : provider?.email;
         if (isMissionSent) {
-          sendEmailWithMailgunTemplate(clientEmail, "missioncreated", mission);
+          sendEmailWithMailgunTemplate(clientEmail, "missioncreated", mission, {
+            action_link: `${process.env.WEBSITE_URL}/mission`,
+          });
           sendEmailWithMailgunTemplate(
             providerEmail,
             "missionreceived",
-            mission
+            mission,
+            {
+              action_link: `${process.env.WEBSITE_URL}/mission`,
+            }
           );
         } else {
-          sendEmailWithMailgunTemplate(clientEmail, "missioncreated", mission);
+          sendEmailWithMailgunTemplate(clientEmail, "missioncreated", mission, {
+            action_link: `${process.env.WEBSITE_URL}/mission`,
+          });
           sendEmailWithMailgunTemplate(
             providerEmail,
             "missionreceived",
-            mission
+            mission,
+            {
+              action_link: `${process.env.WEBSITE_URL}/mission`,
+            }
           );
         }
         await mission.save();

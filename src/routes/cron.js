@@ -58,7 +58,9 @@ router.post("/should-complete", async (req, res) => {
         await m.save();
         const client = await User.findById(m?.fromUserSub);
         const clientEmail = m?.type === "send" ? client?.email : m.recipient;
-        sendEmailWithMailgunTemplate(clientEmail, "missioncompletedclient", m);
+        sendEmailWithMailgunTemplate(clientEmail, "missioncompletedclient", m, {
+          action_link: `${process.env.WEBSITE_URL}/mission/dispute/${m.id}`,
+        });
       }
     }
     res.status(200).json({
@@ -90,7 +92,9 @@ router.post("/should-pay", async (req, res) => {
         sendEmailWithMailgunTemplate(clientEmail, "paymentreleasedclient", m);
         const providerEmail =
           m?.type === "send" ? m.recipient : provider?.email;
-        sendEmailWithMailgunTemplate(providerEmail, "missioncompletedprovider", m);
+        sendEmailWithMailgunTemplate(providerEmail, "missioncompletedprovider", m, {
+          action_link: `${process.env.WEBSITE_URL}/mission`,
+        });
       }
     }
     res.status(200).json({
@@ -129,8 +133,14 @@ router.post("/check-disputes", async (req, res) => {
         const clientEmail = m?.type === "send" ? client?.email : m.recipient;
         const providerEmail =
           m?.type === "send" ? m.recipient : provider?.email;
-        sendEmailWithMailgunTemplate(clientEmail, "disputereviewed", mD);
-        sendEmailWithMailgunTemplate(providerEmail, "disputenoanswer", mD);
+        sendEmailWithMailgunTemplate(clientEmail, "disputereviewed", mD, {
+          outcome_description:
+            "Funds have been refunded to your payment method.",
+          action_link: `${process.env.WEBSITE_URL}/mission/dispute/${mD.id}`,
+        });
+        sendEmailWithMailgunTemplate(providerEmail, "disputenoanswer", mD, {
+          action_link: `${process.env.WEBSITE_URL}/mission/dispute/${mD.id}`,
+        });
       }
     }
     res.status(200).json({ message: "Disputes checked successfully" });

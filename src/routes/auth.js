@@ -101,12 +101,12 @@ router.post("/sign-up", async (req, res) => {
 
     sendEmailWithMailgunTemplate(
       finalUser.email,
-      "signupsuccess",
+      "signupconfirmemail",
       {},
       {
         first_name: finalUser.firstName,
         last_name: finalUser.lastName,
-        confirm_email_url: `${WEBSITE_URL}/auth/confirm-email?token=${token}`,
+        action_link: `${WEBSITE_URL}/auth/confirm-email?token=${token}`,
       }
     );
 
@@ -133,7 +133,9 @@ router.post("/forgot-password", async (req, res) => {
       {
         first_name: user.firstName,
         last_name: user.lastName,
+        action_link: `${process.env.WEBSITE_URL}/auth/reset-password?token=${token}`,
         token,
+
       }
     );
     return res.status(200).json({ message: "Email sent" });
@@ -181,6 +183,15 @@ router.post("/confirm-email", async (req, res) => {
     if (user) {
       user.emailVerified = true;
       await user.save();
+      sendEmailWithMailgunTemplate(
+        user.email,
+        "signupsuccess",
+        {},
+        {
+          first_name: user.firstName,
+          action_link: `${process.env.WEBSITE_URL}/mission`,
+        }
+      );
       return res.status(200).json({
         message: "Email confirmed",
         isEmailVerified: user.emailVerified,

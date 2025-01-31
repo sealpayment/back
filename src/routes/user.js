@@ -199,6 +199,7 @@ router.post("/invite-to-platform", checkJwt, async (req, res) => {
       {},
       {
         inviter_name: `${req.user.firstName} ${req.user.lastName}`,
+        action_link: `${process.env.WEBSITE_URL}/auth/register`,
       }
     );
     res.status(200).json({ message: "Invitation email sent successfully" });
@@ -224,6 +225,7 @@ router.post("/notify-missing-bank-account", checkJwt, async (req, res) => {
       {
         first_name: user.firstName,
         inviter_name: `${req.user.firstName} ${req.user.lastName}`,
+        action_link: `${process.env.WEBSITE_URL}/mission`,
       }
     );
     res.status(200).json({ message: "Reminder email sent successfully" });
