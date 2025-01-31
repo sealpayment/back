@@ -68,7 +68,6 @@ router.post("/sign-up", async (req, res) => {
   const passwordHash = bcrypt.hashSync(decryptedPassword, salt);
 
   let finalUser;
-  let accountLink;
 
   try {
     let tempConnectedAccountId;
@@ -93,6 +92,14 @@ router.post("/sign-up", async (req, res) => {
     });
 
     await finalUser.save();
+
+    const receivedMissions = await Mission.find({
+      recipient: email,
+    });
+    for (const mission of receivedMissions) {
+      mission.fromUserSub = finalUser.id;
+      await mission.save();
+    }
 
     const token = generateAccessToken({
       user_id: finalUser.id,
@@ -135,7 +142,6 @@ router.post("/forgot-password", async (req, res) => {
         last_name: user.lastName,
         action_link: `${process.env.WEBSITE_URL}/auth/reset-password?token=${token}`,
         token,
-
       }
     );
     return res.status(200).json({ message: "Email sent" });

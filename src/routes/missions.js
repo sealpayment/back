@@ -101,7 +101,7 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
       fromUserSub: recipientUser?._id,
       toUserSub: user._id,
     });
-    const link = await createStripePaymentLink(newMission, recipientUser);
+    const link = await createStripePaymentLink(newMission, user);
     newMission.paymentLink = link;
     await newMission.save();
     try {

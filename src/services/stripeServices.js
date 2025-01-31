@@ -8,7 +8,14 @@ const WEBSITE_URL = process.env.WEBSITE_URL;
 
 export async function createStripePaymentLink(mission, toUser) {
   try {
-    const fromUser = await User.findById(mission.fromUserSub);
+    let customerEmail;
+    if (mission.type === "send") {
+      const fromUser = await User.findById(mission.fromUserSub);
+      customerEmail = fromUser?.email;
+    } else {
+      customerEmail = mission.recipient;
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       payment_method_options: {
@@ -16,7 +23,7 @@ export async function createStripePaymentLink(mission, toUser) {
           request_three_d_secure: "any",
         },
       },
-      customer_email: fromUser?.email,
+      customer_email: customerEmail,
       line_items: [
         {
           price_data: {
