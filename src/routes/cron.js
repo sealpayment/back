@@ -6,7 +6,7 @@ import {
   refundToCustomer,
 } from "../services/stripeServices.js";
 import Mission from "../models/missionModel.js";
-import { sendEmailWithTemplateKey } from "../services/emailServices.js";
+import { sendEmailWithMailgunTemplate } from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
 import { currencyMap } from "../utils/helpers.js";
 
@@ -30,7 +30,7 @@ router.post("/should-remind", async (req, res) => {
         const provider = await User.findById(m.toUserSub);
         const providerEmail =
           m?.type === "send" ? m.recipient : provider?.email;
-        sendEmailWithTemplateKey(providerEmail, "missionReminder", m);
+        sendEmailWithMailgunTemplate(providerEmail, "missionreminder", m);
       }
     }
     res.status(200).json({
@@ -58,7 +58,7 @@ router.post("/should-complete", async (req, res) => {
         await m.save();
         const client = await User.findById(m?.fromUserSub);
         const clientEmail = m?.type === "send" ? client?.email : m.recipient;
-        sendEmailWithTemplateKey(clientEmail, "missionCompletedClient", m);
+        sendEmailWithMailgunTemplate(clientEmail, "missioncompletedclient", m);
       }
     }
     res.status(200).json({
@@ -87,10 +87,10 @@ router.post("/should-pay", async (req, res) => {
         m.status = "paid";
         await m.save();
         const clientEmail = m?.type === "send" ? client?.email : m.recipient;
-        sendEmailWithTemplateKey(clientEmail, "paymentReleasedClient", m);
+        sendEmailWithMailgunTemplate(clientEmail, "paymentreleasedclient", m);
         const providerEmail =
           m?.type === "send" ? m.recipient : provider?.email;
-        sendEmailWithTemplateKey(providerEmail, "missionCompletedProvider", m);
+        sendEmailWithMailgunTemplate(providerEmail, "missioncompletedprovider", m);
       }
     }
     res.status(200).json({
@@ -129,8 +129,8 @@ router.post("/check-disputes", async (req, res) => {
         const clientEmail = m?.type === "send" ? client?.email : m.recipient;
         const providerEmail =
           m?.type === "send" ? m.recipient : provider?.email;
-        sendEmailWithTemplateKey(clientEmail, "disputeReviewed", mD);
-        sendEmailWithTemplateKey(providerEmail, "disputeNoAnswer", mD);
+        sendEmailWithMailgunTemplate(clientEmail, "disputereviewed", mD);
+        sendEmailWithMailgunTemplate(providerEmail, "disputenoanswer", mD);
       }
     }
     res.status(200).json({ message: "Disputes checked successfully" });

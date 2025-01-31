@@ -15,7 +15,7 @@ import FormData from "form-data";
 import Mailgun from "mailgun.js";
 
 import Mission from "../models/missionModel.js";
-import { sendEmailWithTemplateKey } from "../services/emailServices.js";
+import { sendEmailWithMailgunTemplate } from "../services/emailServices.js";
 import { User } from "../models/userModel.js";
 import { currencyMap } from "../utils/helpers.js";
 
@@ -105,9 +105,9 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     newMission.paymentLink = link;
     await newMission.save();
     try {
-      sendEmailWithTemplateKey(
+      sendEmailWithMailgunTemplate(
         mission.recipient,
-        recipientUser?._id ? "paymentRequestUser" : "paymentRequestAnonymous",
+        recipientUser?._id ? "paymentrequestuser" : "paymentrequestanonymous",
         newMission
       );
     } catch (error) {
@@ -138,7 +138,7 @@ router.post("/:id/reject", checkJwt, async ({ params }, res) => {
     if (mission.paymentIntentId) {
       const client = await User.findById(mission.fromUserSub);
       await refundToCustomer(mission.paymentIntentId, mission.amount * 100);
-      sendEmailWithTemplateKey(client.email, "missionCancelled", mission);
+      sendEmailWithMailgunTemplate(client.email, "missioncancelled", mission);
     }
     mission.status = "refund";
     await mission.save();

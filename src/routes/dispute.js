@@ -7,7 +7,7 @@ import {
   capturePaymentIntent,
   refundToCustomer,
 } from "../services/stripeServices.js";
-import { sendEmailWithTemplateKey } from "../services/emailServices.js";
+import { sendEmailWithMailgunTemplate } from "../services/emailServices.js";
 
 import { currencyMap, handleUploadedFile } from "../utils/helpers.js";
 import { signedS3Url } from "../utils/aws.js";
@@ -51,16 +51,16 @@ router.post(
     if (!mission) {
       return res.status(404).json({ message: "Mission not found" });
     }
-    let handledFile;
-    try {
-      handledFile = await handleUploadedFile(file);
-    } catch (error) {
-      return res.status(500).json({ message: "Error while uploading file" });
-    }
+    // let handledFile;
+    // try {
+    //   handledFile = await handleUploadedFile(file);
+    // } catch (error) {
+    //   return res.status(500).json({ message: "Error while uploading file" });
+    // }
     mission.dispute.messages.push({
       fromUserSub: user._id,
       message: body.message,
-      file: handledFile,
+      // file: handledFile,
     });
     mission.status = "disputed";
     mission.dispute.status = "open";
@@ -68,16 +68,18 @@ router.post(
     const client = await User.findById(mission.fromUserSub);
     const provider = await User.findById(mission.toUserSub);
     if (mission.dispute.messages.length === 1) {
-      sendEmailWithTemplateKey(client.email, "disputeOpenedClient", mission);
-      sendEmailWithTemplateKey(
+      sendEmailWithMailgunTemplate(client.email, "disputeopenedclient", mission, {
+        action_link: `${WEBSITE_URL}/mission/dispute/{{mission_id}}`,
+      });
+      sendEmailWithMailgunTemplate(
         provider.email,
-        "disputeOpenedProvider",
+        "disputeopenedprovider",
         mission
       );
     }
     if (mission.dispute.messages.length === 2) {
-      sendEmailWithTemplateKey(provider.email, "disputeAnswered", mission);
-      sendEmailWithTemplateKey(client.email, "disputeAnswered", mission);
+      sendEmailWithMailgunTemplate(provider.email, "disputeanswered", mission);
+      sendEmailWithMailgunTemplate(client.email, "disputeanswered", mission);
     }
     return res.status(200).json({
       message: "Dispute updated successfully.",
@@ -106,13 +108,13 @@ router.post(
     }
     const client = await User.findById(mission.fromUserSub);
     const provider = await User.findById(mission.toUserSub);
-    sendEmailWithTemplateKey(client.email, "disputeReviewed", mission, {
+    sendEmailWithMailgunTemplate(client.email, "disputereviewed", mission, {
       outcome_description:
         body.action === "refund"
           ? "Funds have been refunded to your payment method."
           : "Funds have been released to the provider.",
     });
-    sendEmailWithTemplateKey(provider.email, "disputeReviewed", mission, {
+    sendEmailWithMailgunTemplate(provider.email, "disputereviewed", mission, {
       outcome_description:
         body.action === "refund"
           ? "Funds have been refunded to the client's payment method."

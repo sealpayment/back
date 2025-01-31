@@ -13,7 +13,7 @@ import {
   updateConnectedAccountEmail,
   updateStripeCustomerEmail,
 } from "../services/stripeServices.js";
-import { sendEmailWithTemplateKey } from "../services/emailServices.js";
+import { sendEmailWithMailgunTemplate } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 import { Token } from "../models/tokenModel.js";
 
@@ -93,33 +93,25 @@ router.post("/sign-up", async (req, res) => {
     });
 
     await finalUser.save();
-    if (!user && (accountType === "receiver" || accountType === "both")) {
-      // accountLink = await createAccountLink(
-      //   finalUser.stripeConnectedAccountId,
-      //   "/onboarding/stripe/incomplete",
-      //   `/onboarding/stripe/complete?userId=${finalUser._id}`
-      // );
-    }
 
     const token = generateAccessToken({
       user_id: finalUser.id,
       user_email: email,
     });
 
-    sendEmailWithTemplateKey(
+    sendEmailWithMailgunTemplate(
       finalUser.email,
-      "signupSuccess",
+      "signupsuccess",
       {},
       {
         first_name: finalUser.firstName,
         last_name: finalUser.lastName,
-        token,
+        confirm_email_url: `${WEBSITE_URL}/auth/confirm-email?token=${token}`,
       }
     );
 
     return res.status(200).json({
       accessToken: token,
-      // onboardingUrl: accountLink,
     });
   } catch (error) {
     return res.status(400).json({ message: error.message });
@@ -134,9 +126,9 @@ router.post("/forgot-password", async (req, res) => {
       user_id: user.id,
       user_email: email,
     });
-    sendEmailWithTemplateKey(
+    sendEmailWithMailgunTemplate(
       user.email,
-      "forgotPassword",
+      "forgotpassword",
       {},
       {
         first_name: user.firstName,

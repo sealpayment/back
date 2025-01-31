@@ -27,6 +27,7 @@ const UserSchema = new Schema({
     default: "sender",
   },
   createdAt: { type: Date, default: Date.now },
+  isAdmin: { type: Boolean, default: false },
 });
 
 export const User = mongoose.model("User", UserSchema);

@@ -12,7 +12,7 @@ import {
   updateStripeCustomerEmail,
 } from "../services/stripeServices.js";
 import { multerUpload } from "../middlewares/middleware.js";
-import { sendEmailWithTemplateKey } from "../services/emailServices.js";
+import { sendEmailWithMailgunTemplate } from "../services/emailServices.js";
 import Mission from "../models/missionModel.js";
 import { checkAccountOnboardingStatus } from "../services/stripeServices.js";
 
@@ -90,15 +90,16 @@ router.patch("/update-profile", checkJwt, async ({ user, body }, res) => {
         user_id: user.id,
         user_email: user.email,
       });
-      sendEmailWithTemplateKey(
+      sendEmailWithMailgunTemplate(
         body.email,
-        "confirmNewEmail",
+        "confirmnewemail",
         {},
         {
           first_name: user.firstName,
           last_name: user.lastName,
           token,
           newEmail: body.email,
+          action_link: `${process.env.WEBSITE_URL}/auth/confirm-new-email?token=${token}&new-email=${body.email}`,
         }
       );
     }
@@ -192,9 +193,9 @@ router.post("/invite-to-platform", checkJwt, async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "User already has an account" });
     }
-    await sendEmailWithTemplateKey(
+    await sendEmailWithMailgunTemplate(
       email,
-      "inviteToPlatform",
+      "invitetoplatform",
       {},
       {
         inviter_name: `${req.user.firstName} ${req.user.lastName}`,
@@ -216,9 +217,9 @@ router.post("/notify-missing-bank-account", checkJwt, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    await sendEmailWithTemplateKey(
+    await sendEmailWithMailgunTemplate(
       email,
-      "setupBankAccount",
+      "setupbankaccount",
       {},
       {
         first_name: user.firstName,
