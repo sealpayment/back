@@ -132,7 +132,7 @@ router.post(
           : "Funds have been released to the provider.",
       action_link: `${process.env.WEBSITE_URL}/mission`,
     });
-    sendEmailWithMailgunTemplate(provider.email, "disputereviewed", mission, {
+    sendEmailWithMailgunTemplate(provider.email, "disputereviewedprovider", mission, {
       outcome_description:
         body.action === "refund"
           ? "Funds have been refunded to the client's payment method."

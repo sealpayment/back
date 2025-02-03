@@ -107,8 +107,9 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     try {
       const stripePaymentId = newMission?.paymentLink?.split("/").pop();
 
+
       sendEmailWithMailgunTemplate(
-        mission.recipient,
+        recipientUser?.email,
         recipientUser?._id ? "paymentrequestuser" : "paymentrequestanonymous",
         newMission,
         {
@@ -117,6 +118,7 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
             : `${process.env.WEBSITE_URL}/auth/register`,
         }
       );
+      console.log("Email sent successfully");
     } catch (error) {
       console.log("Error while sending email", error);
     }
@@ -125,6 +127,7 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
       missionId: newMission.id,
     });
   } catch (error) {
+    console.log("Error while creating the mission.", error);
     return res
       .status(500)
       .json({ message: "Error while creating the mission.", error });
