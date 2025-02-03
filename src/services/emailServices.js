@@ -142,7 +142,7 @@ export const sendEmailWithMailgunTemplate = async (
       url: process.env.MAILGUN_API_URL,
     });
     return await mg.messages.create(process.env.MAILGUN_DOMAIN, {
-      from: `Seal Payment${process.env.EMAIL_FROM_ADDRESS}`,
+      from: `Seal Payment ${process.env.EMAIL_FROM_ADDRESS}`,
       to: recipient,
       template: templateName,
       "h:X-Mailgun-Variables": JSON.stringify(template_variables),
