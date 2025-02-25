@@ -41,11 +41,18 @@ router.get("/test-deployment", (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const missionId = req.params.id;
-  const mission = await Mission.findById(missionId).exec();
-  if (!mission) {
-    return res.status(404).json({ message: "Mission non trouvée" });
+  try {
+    const mission = await Mission.findById(missionId).exec();
+    if (!mission) {
+      return res.status(404).json({ message: "Mission non trouvée" });
+    }
+    res.json(mission);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error while getting the mission.",
+      error: error.message,
+    });
   }
-  res.json(mission);
 });
 
 router.post("/create", checkJwt, async ({ user, body }, res) => {
@@ -106,7 +113,6 @@ router.post("/ask", checkJwt, async ({ user, body }, res) => {
     await newMission.save();
     try {
       const stripePaymentId = newMission?.paymentLink?.split("/").pop();
-
 
       sendEmailWithMailgunTemplate(
         recipientUser?.email,
