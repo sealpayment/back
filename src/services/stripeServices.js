@@ -82,9 +82,19 @@ export async function createConnectedAccount(userData) {
     const connectedAccount = await stripe.accounts.create({
       type: "express",
       email: userData.email,
+      business_type: "individual",
+      individual: {
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+      },
       capabilities: {
         card_payments: { requested: true },
         transfers: { requested: true },
+      },
+      business_profile: {
+        name: userData.firstName + " " + userData.lastName,
+        url: "sealpayment.com",
+        mcc: "5734",
       },
       country: userData.country,
     });
